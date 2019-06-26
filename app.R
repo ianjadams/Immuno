@@ -4,6 +4,7 @@ library(readxl)
 library(reshape2)
 library(shiny)
 library(shinythemes)
+library(xlsx)
 
 
 
@@ -41,7 +42,7 @@ ui<- shinyUI(fluidPage(
       
       
       # Button
-      downloadButton("downloadData", "Download Current Table")
+      downloadButton("downloadData", "Download All Tables")
       
     ),
     mainPanel(
@@ -65,7 +66,7 @@ server <- function(input, output, session){
     inFile <- input$file1
     if (is.null(inFile)) return(NULL) 
     initialData <- data.frame(read_excel(inFile$datapath))
-    initialData$Tier.3 <- as.numeric(as.character(substring(initialData$Tier.3, 3)))
+    initialData$Tier3 <- as.numeric(as.character(substring(initialData$Tier3, 3)))
     initialData
     
   })
@@ -104,7 +105,7 @@ server <- function(input, output, session){
   #creates table for baseline positive visits
   bpFunc <- function() {
     
-    bp <- filter(myData(), Visit == input$baselineVisits & Tier.2 == input$t2D)
+    bp <- filter(myData(), Visit == input$baselineVisits & Tier2 == input$t2D)
     return(bp)
     
   }
@@ -115,14 +116,22 @@ server <- function(input, output, session){
   pivotTableFunc <- function() {
     
     #pull unique Subject values and unique visit values
-    rawData <- group_by(myData(), Subject, Visit)
+    groupRawData <- group_by(myData(), Subject, Visit)
     
     #prepare Tier.3 values to be populated in the table
-    rawData <- summarise(rawData,
-                         sumTiter = sum(Tier.3))
+    summRawData <- summarise(groupRawData,
+                             sumTiter = sum(Tier3))
     
     #transform the rawData table to a pivot table, using Subjects as rows, Visits as columns, Tier.3 values as cells
-    rawDataTrans <- dcast(rawData, Subject ~ Visit, value.var = "sumTiter")
+    rawDataTrans <- dcast(summRawData, Subject ~ Visit, value.var = "sumTiter")
+    
+    #get unique list of "Visit" codes and reorder the pivot table columns into chronological order by visit 
+    nams <- as.character(unique(myData()$Visit)) 
+    nums <- sapply(nams, function(nm) which(names(rawDataTrans) %in% nm)) 
+    rawDataTrans[, sort(nums)] <- rawDataTrans[, nams] 
+    names(rawDataTrans)[sort(nums)] <- nams 
+    rawDataTrans 
+    
     
     #R DOES NOT LIKE FORWARD SLASHES IN COLUMN HEADERS, MUST BE RENAMED
     colnames(rawDataTrans)[colnames(rawDataTrans)==input$baselineVisits] <- "Baseline"
@@ -147,10 +156,19 @@ server <- function(input, output, session){
     
     #prepare Tier.3 values to be populated in the table
     rawData <- summarise(rawData,
-                         sumTiter = sum(Tier.3))
+                         sumTiter = sum(Tier3))
     
     #transform the rawData table to a pivot table, using Subjects as rows, Visits as columns, Tier.3 values as cells
     rawDataTrans <- dcast(rawData, Subject ~ Visit, value.var = "sumTiter")
+    
+    
+    #get unique list of "Visit" codes and reorder the pivot table columns into chronological order by visit 
+    nams <- as.character(unique(myData()$Visit)) 
+    nums <- sapply(nams, function(nm) which(names(rawDataTrans) %in% nm)) 
+    rawDataTrans[, sort(nums)] <- rawDataTrans[, nams] 
+    names(rawDataTrans)[sort(nums)] <- nams 
+    rawDataTrans 
+    
     
     #R DOES NOT LIKE FORWARD SLASHES IN COLUMN HEADERS, MUST BE RENAMED
     colnames(rawDataTrans)[colnames(rawDataTrans)==input$baselineVisits] <- "Baseline"
@@ -257,12 +275,12 @@ server <- function(input, output, session){
     statsData <- myData()
     
     # num of samples
-    allSamples <- nrow(subset(statsData, Tier.1 == input$t1D | Tier.1 == input$t1ND))
+    allSamples <- nrow(subset(statsData, Tier1 == input$t1D | Tier1 == input$t1ND))
     
     
     
     # num of Tier 1 detected samples
-    t1Pos <- nrow(subset(statsData, Tier.1 == input$t1D))
+    t1Pos <- nrow(subset(statsData, Tier1 == input$t1D))
     
     # putative positive rate (num of Tier 1 detected samples / total samples)
     putPR <- (t1Pos/allSamples) * 100
@@ -271,10 +289,10 @@ server <- function(input, output, session){
     
     
     # num of Tier 2 samples tested
-    t2Tested <- nrow(subset(statsData, Tier.2 == input$t2D | Tier.2 == input$t2ND))
+    t2Tested <- nrow(subset(statsData, Tier2 == input$t2D | Tier2 == input$t2ND))
     
     # num of Tier 2 detected samples
-    t2Pos <- nrow(subset(statsData, Tier.2 == input$t2D))
+    t2Pos <- nrow(subset(statsData, Tier2 == input$t2D))
     
     # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
     conPR <- (t2Pos/t1Pos) * 100
@@ -286,7 +304,7 @@ server <- function(input, output, session){
     baselines <- nrow(subset(statsData, Visit == input$baselineVisits))
     
     # num of subjects detected in Tier 2 at baseline visit
-    basePos <- nrow(subset(statsData, Tier.2 == input$t2D & Visit == input$baselineVisits))
+    basePos <- nrow(subset(statsData, Tier2 == input$t2D & Visit == input$baselineVisits))
     
     # baseline positive rate (num of baseline visits that are T2 positive / num of all baseline visits)
     basePR <- (basePos/baselines) * 100
@@ -325,7 +343,7 @@ server <- function(input, output, session){
     
     
     # output table for Treatment Emergence results
-    data.frame("Some col header" = c(highTiter, numTESubjects, numSubjects, teRate),
+    data.frame("Sort" = c(highTiter, numTESubjects, numSubjects, teRate),
                row.names = c("Highest Titer", "Treatment Emergent Subjects", "Total Subjects", 
                              "Treatment Emergent Rate"))
     
@@ -341,9 +359,18 @@ server <- function(input, output, session){
   # Downloadable csv of selected dataset ----
   output$downloadData <- downloadHandler(
     
-    'filteredData.csv', content = function(file) {
+    'appDownloadData.xlsx', content = function(file) {
       these = input$contents_rows_all
-      write.csv(myData()[these, , drop = FALSE], file)
+      # write.xlsx(baselineFunc()[these, , drop = FALSE], file)
+      
+      write.xlsx(myData(), file, sheetName="Original", row.names=FALSE)
+      write.xlsx(baselineFunc(), file, sheetName="Baselines", append=TRUE, row.names=FALSE)
+      write.xlsx(noBaselineFunc(), file, sheetName="Missing Baseline", append=TRUE, row.names=FALSE)
+      write.xlsx(bpFunc(), file, sheetName="Baseline Positive", append=TRUE, row.names=FALSE)
+      write.xlsx(pivotTableFunc(), file, sheetName="Titer Pivot Table", append=TRUE, row.names=FALSE)
+      write.xlsx(treatEmerFunc(), file, sheetName="Treatment Emergent", append=TRUE, row.names=FALSE)
+      write.xlsx(myData()[these, , drop = FALSE], file, sheetName="Search Results", append=TRUE, row.names=FALSE)
+      
       
     })
   
