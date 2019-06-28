@@ -67,6 +67,7 @@ server <- function(input, output, session){
     if (is.null(inFile)) return(NULL) 
     initialData <- data.frame(read_excel(inFile$datapath))
     initialData$Tier3 <- as.numeric(as.character(substring(initialData$Tier3, 3)))
+    initialData$Tier3[is.na(initialData$Tier3)] <- 0
     initialData
     
   })
@@ -129,15 +130,14 @@ server <- function(input, output, session){
     nams <- as.character(unique(myData()$Visit)) 
     nums <- sapply(nams, function(nm) which(names(rawDataTrans) %in% nm)) 
     rawDataTrans[, sort(nums)] <- rawDataTrans[, nams] 
-    names(rawDataTrans)[sort(nums)] <- nams 
-    rawDataTrans 
+    names(rawDataTrans)[sort(nums)] <- nams
     
     
     #R DOES NOT LIKE FORWARD SLASHES IN COLUMN HEADERS, MUST BE RENAMED
     colnames(rawDataTrans)[colnames(rawDataTrans)==input$baselineVisits] <- "Baseline"
     
     #set NA values to 0
-    rawDataTrans[is.na(rawDataTrans)] <- 0
+    rawDataTrans[is.na(rawDataTrans)] <- "-"
     
     #rename and drop the NA column
     colnames(rawDataTrans)[colnames(rawDataTrans)=="NA"] <- "Blank"
@@ -152,37 +152,33 @@ server <- function(input, output, session){
   treatEmerFunc <- function() {
     
     #pull unique Subject values and unique visit values
-    rawData <- group_by(myData(), Subject, Visit)
+    groupRawData <- group_by(myData(), Subject, Visit)
     
     #prepare Tier.3 values to be populated in the table
-    rawData <- summarise(rawData,
-                         sumTiter = sum(Tier3))
+    summRawData <- summarise(groupRawData,
+                             sumTiter = sum(Tier3))
     
     #transform the rawData table to a pivot table, using Subjects as rows, Visits as columns, Tier.3 values as cells
-    rawDataTrans <- dcast(rawData, Subject ~ Visit, value.var = "sumTiter")
+    rawDataTrans <- dcast(summRawData, Subject ~ Visit, value.var = "sumTiter")
     
     
-    #get unique list of "Visit" codes and reorder the pivot table columns into chronological order by visit 
+    #chronologically reorder columns by visit code
+    #get unique list of "Visit" codes and reorder the pivot table columns 
     nams <- as.character(unique(myData()$Visit)) 
     nums <- sapply(nams, function(nm) which(names(rawDataTrans) %in% nm)) 
     rawDataTrans[, sort(nums)] <- rawDataTrans[, nams] 
-    names(rawDataTrans)[sort(nums)] <- nams 
-    rawDataTrans 
+    names(rawDataTrans)[sort(nums)] <- nams
+    
     
     
     #R DOES NOT LIKE FORWARD SLASHES IN COLUMN HEADERS, MUST BE RENAMED
     colnames(rawDataTrans)[colnames(rawDataTrans)==input$baselineVisits] <- "Baseline"
     
-    #set NA values to 0
-    rawDataTrans[is.na(rawDataTrans)] <- 0
     
-    #rename and drop the NA column
-    colnames(rawDataTrans)[colnames(rawDataTrans)=="NA"] <- "Blank"
-    rawDataTrans$Blank <- NULL
     
     mrd <- input$mrdIn #takes in user input MRD value
     
-    maxTiter <- apply(rawDataTrans[,-1], 1, max)
+    maxTiter <- apply(rawDataTrans[,-1], 1, max, na.rm=TRUE)
     
     bindedTiter <- cbind(maxTiter, rawDataTrans)
     
@@ -191,6 +187,10 @@ server <- function(input, output, session){
     posBaseTE <- filter(bindedTiter, Baseline != 0 & bindedTiter$maxTiter >= 4*bindedTiter$Baseline)
     
     emerTable <- rbind(negBaseTE, posBaseTE)
+    
+    emerTable[is.na(emerTable)] <- "-"
+    # emerTable <-data.frame(emerTable)
+    return(emerTable)
     
   }
   #end global functions for table views
