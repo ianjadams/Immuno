@@ -77,6 +77,7 @@ server <- function(input, output, session){
     initialData <- data.frame(read_excel(inFile$datapath))
     initialData$Tier3 <- as.numeric(as.character(substring(initialData$Tier3, 3)))
     initialData$Tier3[is.na(initialData$Tier3)] <- 0
+    initialData[initialData==input$baselineVisits] <- "Baseline"
     initialData
     
   })
@@ -88,7 +89,7 @@ server <- function(input, output, session){
   #creates table for baseline visits
   baselineFunc <- function() {
     
-    baseline <- filter(myData(), Visit == input$baselineVisits)
+    baseline <- filter(myData(), Visit == "Baseline")
     return(baseline)
     
   }
@@ -100,13 +101,25 @@ server <- function(input, output, session){
     
     rawData <- myData()
     
-    baseline <- filter(rawData, Visit == input$baselineVisits)
+    baseline <- filter(rawData, Visit == "Baseline")
     
     allSubjects <- distinct(rawData, Subject)
     
     missingSubjects <- left_join(allSubjects, baseline, by = "Subject")
     missingSubjects <- filter(missingSubjects, is.na(Visit))
     missingSubjects <- subset(missingSubjects, select = "Subject")
+    
+    if (dim(missingSubjects)[1] == 0) {
+      
+      placeHolder <- data.frame("EMPTY")
+      names(placeHolder) <- "Subject"
+      return(placeHolder)
+      
+    } else {
+      
+      return(missingSubjects)
+      
+    }
     
   }
   
@@ -115,8 +128,19 @@ server <- function(input, output, session){
   #creates table for baseline positive visits
   bpFunc <- function() {
     
-    bp <- filter(myData(), Visit == input$baselineVisits & Tier2 == input$t2D)
-    return(bp)
+    bp <- filter(myData(), Visit == "Baseline" & Tier2 == input$t2D)
+    
+    if (dim(bp)[1] == 0) {
+      
+      placeHolder <- data.frame("EMPTY")
+      names(placeHolder) <- "Subject"
+      return(placeHolder)
+      
+    } else {
+      
+      return(bp)
+      
+    }
     
   }
   
@@ -205,7 +229,18 @@ server <- function(input, output, session){
     emerTable <- rbind(negBaseTE, posBaseTE)
     
     emerTable[is.na(emerTable)] <- "-"
-    return(emerTable)
+    
+    if (dim(emerTable)[1] == 0) {
+      
+      placeHolder <- data.frame("EMPTY")
+      names(placeHolder) <- "Subject"
+      return(placeHolder)
+      
+    } else {
+      
+      return(emerTable)
+      
+    }
     
   }
   
@@ -291,7 +326,7 @@ server <- function(input, output, session){
     #SHOW TREATMENT EMERGENT TABLE
     else if(input$dropdown == "te") {
       
-      return(treatEmerFunc())
+      return(pivTreatView())
       
     }
     
@@ -370,10 +405,10 @@ server <- function(input, output, session){
     
     
     # num of subjects with baseline visits
-    baselines <- nrow(subset(statsData, Visit == input$baselineVisits))
+    baselines <- nrow(subset(statsData, Visit == "Baseline"))
     
     # num of subjects detected in Tier 2 at baseline visit
-    basePos <- nrow(subset(statsData, Tier2 == input$t2D & Visit == input$baselineVisits))
+    basePos <- nrow(subset(statsData, Tier2 == input$t2D & Visit == "Baseline"))
     
     # baseline positive rate (num of baseline visits that are T2 positive / num of all baseline visits)
     basePR <- (basePos/baselines) * 100
@@ -404,17 +439,17 @@ server <- function(input, output, session){
     numTESubjects <- nrow(treatEmerFunc())
     
     # num of subjects in dataset
-    numSubjects <- nrow(pivotTableFunc())
+    numBLSubjects <- nrow(baselineFunc())
     
     # treatment emergence rate
-    teRate <- (numTESubjects/numSubjects) * 100
+    teRate <- (numTESubjects/numBLSubjects) * 100
     teRate <- round(teRate, 2)
     
     
     
     # output table for Treatment Emergence results
-    data.frame("Sort" = c(highTiter, numTESubjects, numSubjects, teRate),
-               row.names = c("Highest Titer", "Treatment Emergent Subjects", "Total Subjects", 
+    data.frame("Sort" = c(highTiter, numTESubjects, numBLSubjects, teRate),
+               row.names = c("Highest Titer", "Treatment Emergent Subjects", "Total Subjects w/Baseline", 
                              "Treatment Emergent Rate"))
     
     
@@ -438,7 +473,7 @@ server <- function(input, output, session){
       write.xlsx(noBaselineFunc(), file, sheetName="Missing Baselines", append=TRUE, row.names=FALSE)
       write.xlsx(bpFunc(), file, sheetName="Baseline Positives", append=TRUE, row.names=FALSE)
       write.xlsx(pivTableView(), file, sheetName="Titer Pivot Table", append=TRUE, row.names=FALSE)
-      write.xlsx(treatEmerFunc(), file, sheetName="Treatment Emergent", append=TRUE, row.names=FALSE)
+      write.xlsx(pivTreatView(), file, sheetName="Treatment Emergent", append=TRUE, row.names=FALSE)
       write.xlsx(myData()[these, , drop = FALSE], file, sheetName="Search Results", append=TRUE, row.names=FALSE)
       
       
