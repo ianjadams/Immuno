@@ -23,8 +23,8 @@ ui<- shinyUI(fluidPage(
       # text inputs for specifying values
       textInput("baselineVisits", label = "Complete the Fields Below:", placeholder = "Name of 'Baseline Visit' value"),
       textInput("t1D", label = NULL, placeholder = "Name of 'Tier 1 Detected' value"),
-      textInput("t2D", label = NULL, placeholder = "Name of 'Tier 2 Detected' value"),
       textInput("t1ND", label = NULL, placeholder = "Name of 'Tier 1 NOT Detected' value"),
+      textInput("t2D", label = NULL, placeholder = "Name of 'Tier 2 Detected' value"),
       textInput("t2ND", label = NULL, placeholder = "Name of 'Tier 2 NOT Detected' value"),
       
       #uiOutput('select'),
@@ -34,7 +34,7 @@ ui<- shinyUI(fluidPage(
       
       # Input: Select method of filtering data ----
       selectInput("dropdown", "Select a View",
-                  choices = c(None = "none",
+                  choices = c(Original = "none",
                               "Baseline Visits" = "baseline",
                               "Missing Baseline Visits" = "nobaseline",
                               "Baseline Positive Visits" = "bp",
@@ -55,7 +55,10 @@ ui<- shinyUI(fluidPage(
                            DT::dataTableOutput('contents')),
                   tabPanel("Plot", plotOutput('plot')),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
-                           DT::dataTableOutput('summary2'))
+                           br(),
+                           DT::dataTableOutput('summary2'),
+                           br(),
+                           DT::dataTableOutput('summary3'))
       )
     )
   )
@@ -67,6 +70,7 @@ ui<- shinyUI(fluidPage(
 
 #begin Shiny server function
 server <- function(input, output, session){
+  
   
   #create reactive table on data load
   #change Tier3 datatype to numeric and trim off "1:" from all values
@@ -111,9 +115,9 @@ server <- function(input, output, session){
     
     if (dim(missingSubjects)[1] == 0) {
       
-      placeHolder <- data.frame("EMPTY")
-      names(placeHolder) <- "Subject"
-      return(placeHolder)
+      missingSubjects <- data.frame("EMPTY")
+      names(missingSubjects) <- "Subject"
+      return(missingSubjects)
       
     } else {
       
@@ -132,9 +136,9 @@ server <- function(input, output, session){
     
     if (dim(bp)[1] == 0) {
       
-      placeHolder <- data.frame("EMPTY")
-      names(placeHolder) <- "Subject"
-      return(placeHolder)
+      bp <- data.frame("EMPTY")
+      names(bp) <- "Subject"
+      return(bp)
       
     } else {
       
@@ -232,9 +236,9 @@ server <- function(input, output, session){
     
     if (dim(emerTable)[1] == 0) {
       
-      placeHolder <- data.frame("EMPTY")
-      names(placeHolder) <- "Subject"
-      return(placeHolder)
+      emerTable <- data.frame("EMPTY")
+      names(emerTable) <- "Subject"
+      return(emerTable)
       
     } else {
       
@@ -404,27 +408,16 @@ server <- function(input, output, session){
     
     
     
-    # num of subjects with baseline visits
-    baselines <- nrow(subset(statsData, Visit == "Baseline"))
-    
-    # num of subjects detected in Tier 2 at baseline visit
-    basePos <- nrow(subset(statsData, Tier2 == input$t2D & Visit == "Baseline"))
-    
-    # baseline positive rate (num of baseline visits that are T2 positive / num of all baseline visits)
-    basePR <- (basePos/baselines) * 100
-    basePR <- round(basePR, 2)
-    
-    
-    
     # output table for Tier 1, Tier 2, and Baseline results
-    data.frame("SamplesTested" = c(allSamples, t2Tested, baselines),
-               "Detected" = c(t1Pos, t2Pos, basePos),
-               "PostiveRate" = c(putPR, conPR, basePR),
-               row.names = c("Tier 1", "Tier 2", "Baseline"))
+    data.frame("SamplesTested" = c(allSamples, t2Tested),
+               "Detected" = c(t1Pos, t2Pos),
+               "PostiveRate" = c(putPR, conPR),
+               row.names = c("Tier 1", "Tier 2"))
     
     
     
-  })
+  }, options = list(dom = 't')
+  ) 
   #end T1, T2, BASELINE table
   
   
@@ -432,31 +425,112 @@ server <- function(input, output, session){
   #begin Treatment Emergent table
   output$summary2 <- DT::renderDataTable({
     
-    # max titer of treatment emergence table
-    highTiter <- max(treatEmerFunc()$maxTiter)
-    
-    # num of treatment emergent subjects in dataset
-    numTESubjects <- nrow(treatEmerFunc())
-    
-    # num of subjects in dataset
+    # num of evaluable subjects in dataset
     numBLSubjects <- nrow(baselineFunc())
     
-    # treatment emergence rate
+    # percent of subjects evaluable for TE ADA
+    baseRate <- (numBLSubjects/numBLSubjects) * 100
+    baseRate <- round(baseRate, 2)
+    
+    
+    
+    # num of subjects with positive baselines
+    if(bpFunc()$Subject=="EMPTY") {
+      
+      numBLPosSubjects <- 0
+      
+    } else {
+      
+      numBLPosSubjects <- nrow(bpFunc())
+      
+    }
+    
+    # percent of subjects positive at baseline
+    basePosRate <- (numBLPosSubjects/numBLSubjects) * 100
+    basePosRate <- round(basePosRate, 2)
+    
+    
+    
+    # num of treatment emergent subjects
+    if(treatEmerFunc()$Subject=="EMPTY") {
+      
+      numTESubjects <- 0
+      
+    } else {
+      
+      numTESubjects <- nrow(treatEmerFunc())
+      
+    }
+    
+    # percent of subjects that are treatment emergent
     teRate <- (numTESubjects/numBLSubjects) * 100
     teRate <- round(teRate, 2)
     
     
     
+    # num of treatment induced subjects
+    numTISubjects <- nrow(subset(treatEmerFunc(), Baseline == 0))
+    
+    # percent of subjects that are treatment induced
+    tiRate <- (numTISubjects/numBLSubjects) * 100
+    tiRate <- round(tiRate, 2)
+    
+    
+    
+    # num of treatment boosted subjects
+    numTBSubjects <- nrow(subset(treatEmerFunc(), Baseline != 0))
+    
+    # percent of subjects that are treatment boosted
+    tbRate <- (numTBSubjects/numBLSubjects) * 100
+    tbRate <- round(tbRate, 2)
+    
+    
+    
     # output table for Treatment Emergence results
-    data.frame("Sort" = c(highTiter, numTESubjects, numBLSubjects, teRate),
-               row.names = c("Highest Titer", "Treatment Emergent Subjects", "Total Subjects w/Baseline", 
-                             "Treatment Emergent Rate"))
+    data.frame("Count" = c(numBLSubjects, numBLPosSubjects, numTESubjects, numTISubjects, numTBSubjects),
+               "Rate" = c(baseRate, basePosRate, teRate, tiRate, tbRate),
+               row.names = c("Subjects Evaluable for TE ADA", "Evaluable Subs with ADA Present at Baseline",
+                             "Subjects TE ADA", "Treatment-Induced", "Treatment-Boosted"))
     
     
     
-  })
+  }, options = list(dom = 't')
+  )
   #end Treatment Emergent table
   
+  
+  
+  #begin General Stats table
+  output$summary3 <- DT::renderDataTable({
+    
+    # num of unique subjects in dataset
+    numAllSubjects <- nrow(pivotTableFunc())
+    
+    # num of subjects missing baselines
+    if(noBaselineFunc()$Subject=="EMPTY") {
+      
+      numMissBLSubjects <- 0
+      
+    } else {
+      
+      numMissBLSubjects <- nrow(noBaselineFunc())
+      
+    }
+    
+    # max titer of treatment emergence table
+    highTiter <- max(treatEmerFunc()$maxTiter)
+    
+    
+    
+    # output table for General Stats results
+    data.frame("Sort" = c(numAllSubjects, numMissBLSubjects, highTiter),
+               row.names = c("Total Unique Subjects", "Subjects Missing Baseline", "Highest Titer"))
+    
+    
+    
+  }, options = list(dom = 't')
+  )
+  #end General Stats table
   #end "Summary" tab
   
   
