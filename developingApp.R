@@ -34,13 +34,14 @@ ui<- shinyUI(fluidPage(
       
       # Input: Select method of filtering data ----
       selectInput("dropdown", "Select a View",
-                  choices = c(Original = "none",
-                              "Baseline Visits" = "baseline",
-                              "Missing Baseline Visits" = "nobaseline",
-                              "Baseline Positive Visits" = "bp",
-                              "Titers by Subject" = "subjects",
-                              "Treatment Emergent Subjects" = "te"),
-                  selected = "none"),
+                  choices = c(Original = "original",
+                              "Baselines" = "baseline",
+                              "Missing Baselines" = "nobaseline",
+                              "Baseline Positives" = "bp",
+                              "Subject Pivot Table" = "subjects",
+                              "Treatment Emergent Pivot Table" = "te",
+                              "Titer Pivot Table" = "titercounts"),
+                  selected = "original"),
       
       
       # Button
@@ -142,7 +143,7 @@ server <- function(input, output, session){
       
     } else {
       
-    return(bp)
+      return(bp)
       
     }
     
@@ -163,29 +164,18 @@ server <- function(input, output, session){
     #transform the rawData table to a pivot table, using Subjects as rows, Visits as columns, Tier.3 values as cells
     rawDataTrans <- dcast(summRawData, Subject ~ Visit, value.var = "sumTiter")
     
-    #get unique list of "Visit" codes and reorder the pivot table columns into chronological order by visit 
+    #chronologically reorder columns by visit code
+    #get unique list of "Visit" codes and reorder the pivot table columns 
     nams <- as.character(unique(myData()$Visit)) 
     nums <- sapply(nams, function(nm) which(names(rawDataTrans) %in% nm)) 
     rawDataTrans[, sort(nums)] <- rawDataTrans[, nams] 
     names(rawDataTrans)[sort(nums)] <- nams
     
-    
-    #R DOES NOT LIKE FORWARD SLASHES IN COLUMN HEADERS, MUST BE RENAMED
-    # colnames(rawDataTrans)[colnames(rawDataTrans)==input$baselineVisits] <- "Baseline"
-    
     #get max titer of each subject 
-    maxTiter <- apply(rawDataTrans[,-1], 1, max, na.rm=TRUE)
+    maxTiter <- apply(rawDataTrans[-c(1:2)], 1, max, na.rm=TRUE)
     
     #append maxTiter to first column of pivot table
     bindedTiter <- cbind(maxTiter, rawDataTrans)
-    
-    #set NA values to 0
-    bindedTiter[is.na(bindedTiter)] <- "-"
-    
-    #rename and drop the NA column
-    # colnames(bindedTiter)[colnames(bindedTiter)=="NA"] <- "Blank"
-    # bindedTiter$Blank <- NULL
-    return(bindedTiter)
     
   }
   
@@ -194,45 +184,16 @@ server <- function(input, output, session){
   #begin treatment emergent calculations
   treatEmerFunc <- function() {
     
-    #pull unique Subject values and unique visit values
-    groupRawData <- group_by(myData(), Subject, Visit)
-    
-    #prepare Tier.3 values to be populated in the table
-    summRawData <- summarise(groupRawData,
-                             sumTiter = sum(Tier3))
-    
-    #transform the rawData table to a pivot table, using Subjects as rows, Visits as columns, Tier.3 values as cells
-    rawDataTrans <- dcast(summRawData, Subject ~ Visit, value.var = "sumTiter")
-    
-    
-    #chronologically reorder columns by visit code
-    #get unique list of "Visit" codes and reorder the pivot table columns 
-    nams <- as.character(unique(myData()$Visit)) 
-    nums <- sapply(nams, function(nm) which(names(rawDataTrans) %in% nm)) 
-    rawDataTrans[, sort(nums)] <- rawDataTrans[, nams] 
-    names(rawDataTrans)[sort(nums)] <- nams
-    
-    
-    
-    #R DOES NOT LIKE FORWARD SLASHES IN COLUMN HEADERS, MUST BE RENAMED
-    colnames(rawDataTrans)[colnames(rawDataTrans)==input$baselineVisits] <- "Baseline"
-    
-    
+    treatData <- pivotTableFunc()
     
     #takes in user input MRD value
     mrd <- input$mrdIn 
     
-    maxTiter <- apply(rawDataTrans[,-1], 1, max, na.rm=TRUE)
+    negBaseTE <- filter(treatData, Baseline == 0 & maxTiter >= 2*mrd)
     
-    bindedTiter <- cbind(maxTiter, rawDataTrans)
-    
-    negBaseTE <- filter(bindedTiter, Baseline == 0 & maxTiter >= 2*mrd)
-    
-    posBaseTE <- filter(bindedTiter, Baseline != 0 & bindedTiter$maxTiter >= 4*bindedTiter$Baseline)
+    posBaseTE <- filter(treatData, Baseline != 0 & treatData$maxTiter >= 4*treatData$Baseline)
     
     emerTable <- rbind(negBaseTE, posBaseTE)
-    
-    emerTable[is.na(emerTable)] <- "-"
     
     if (dim(emerTable)[1] == 0) {
       
@@ -247,6 +208,22 @@ server <- function(input, output, session){
     }
     
   }
+  
+  
+  
+  #function: creates titer pivot table
+  titerPivot <- function() {
+    
+    bpSubs <- filter(pivotTableFunc(), !(is.na(Baseline)), maxTiter != "-Inf")
+    
+    bpSubs <- data.frame(bpSubs$Baseline, bpSubs$maxTiter)
+    
+    titerPiv <- as.data.frame.matrix(addmargins(table(bpSubs[,1], bpSubs[,2])))
+    titerPiv <- cbind("Baseline Titer" = rownames(titerPiv), titerPiv)
+    return(titerPiv)
+    
+  } 
+  
   
   
   #gets the unique visit codes once the original dataset has been loaded
@@ -298,7 +275,7 @@ server <- function(input, output, session){
     
     
     #SHOW ORIGINAL TABLE
-    if(input$dropdown == "none") {
+    if(input$dropdown == "original") {
       
       return(myData())
       
@@ -311,7 +288,7 @@ server <- function(input, output, session){
     }
     #SHOW MISSING BASELINE VISITS TABLE
     else if(input$dropdown == "nobaseline") {
-        
+      
       return(noBaselineFunc())
       
     }
@@ -324,13 +301,32 @@ server <- function(input, output, session){
     #SHOW TITERS BY SUBJECT TABLE
     else if(input$dropdown == "subjects") {
       
-      return(pivTableView())
+      # return(pivTableView())
+      
+      bindedTiter <- pivTableView()
+      
+      #set NA and "-Inf" values to "-" for visibility
+      bindedTiter[is.na(bindedTiter)] <- "-"
+      bindedTiter[bindedTiter == "-Inf"] <- "-"
+      
+      return(bindedTiter)
       
     } 
     #SHOW TREATMENT EMERGENT TABLE
     else if(input$dropdown == "te") {
       
-      return(pivTreatView())
+      emerTable <- pivTreatView()
+      
+      #set NA and values to "-" for visibility
+      emerTable[is.na(emerTable)] <- "-"
+      
+      return(emerTable)
+      
+    }
+    #SHOW TITER COUNTS PIVOT TABLE
+    else if(input$dropdown == "titercounts") {
+      
+      return(titerPivot())
       
     }
     
@@ -347,14 +343,14 @@ server <- function(input, output, session){
     #use titer pivot table to create frequency table of each unique titer AND drop titer value of zero
     countTiter <- as.data.frame(table(pivotTableFunc()$maxTiter))
     names(countTiter) <- c("Titer", "Count")
-    countTiter <- countTiter[!(countTiter$Titer == 0), ]
+    countTiter <- countTiter[!(countTiter$Titer == 0 | countTiter$Titer == "-Inf"), ]
     
     #plot titer counts
     
     plot1 <- ggplot(countTiter, aes(x = Titer, y = Count)) + 
       geom_bar(stat = "identity", color = "#337ab7", size = 0.6, fill = "#18bc9c", alpha = 0.7) + 
       geom_text(aes(label = Count), vjust = -0.3, color = "#2c3e50", size = 4.5) + 
-      ggtitle("Frequency of Highest Titer per Subject") + 
+      ggtitle("Frequency of Highest Titer (Post-BL) per Subject") + 
       theme_minimal()
     
     
@@ -416,7 +412,7 @@ server <- function(input, output, session){
     
     
     
-   }, options = list(dom = 't')
+  }, options = list(dom = 't')
   ) 
   #end T1, T2, BASELINE table
   
@@ -424,7 +420,7 @@ server <- function(input, output, session){
   
   #begin Treatment Emergent table
   output$summary2 <- DT::renderDataTable({
-
+    
     # num of evaluable subjects in dataset
     numBLSubjects <- nrow(baselineFunc())
     
@@ -448,7 +444,7 @@ server <- function(input, output, session){
     # percent of subjects positive at baseline
     basePosRate <- (numBLPosSubjects/numBLSubjects) * 100
     basePosRate <- round(basePosRate, 2)
-
+    
     
     
     # num of treatment emergent subjects
@@ -483,18 +479,18 @@ server <- function(input, output, session){
     # percent of subjects that are treatment boosted
     tbRate <- (numTBSubjects/numBLSubjects) * 100
     tbRate <- round(tbRate, 2)
-  
     
-
+    
+    
     # output table for Treatment Emergence results
     data.frame("Count" = c(numBLSubjects, numBLPosSubjects, numTESubjects, numTISubjects, numTBSubjects),
                "Rate" = c(baseRate, basePosRate, teRate, tiRate, tbRate),
                row.names = c("Subjects Evaluable for TE ADA", "Evaluable Subs with ADA Present at Baseline",
                              "Subjects TE ADA", "Treatment-Induced", "Treatment-Boosted"))
-
-
-
-   }, options = list(dom = 't')
+    
+    
+    
+  }, options = list(dom = 't')
   )
   #end Treatment Emergent table
   
@@ -528,7 +524,7 @@ server <- function(input, output, session){
     
     
     
-   }, options = list(dom = 't')
+  }, options = list(dom = 't')
   )
   #end General Stats table
   #end "Summary" tab
@@ -542,13 +538,14 @@ server <- function(input, output, session){
     'appDownloadData.xlsx', content = function(file) {
       these = input$contents_rows_all
       
-      write.xlsx(myData(), file, sheetName="Original", row.names=FALSE)
-      write.xlsx(baselineFunc(), file, sheetName="Baselines", append=TRUE, row.names=FALSE)
-      write.xlsx(noBaselineFunc(), file, sheetName="Missing Baselines", append=TRUE, row.names=FALSE)
-      write.xlsx(bpFunc(), file, sheetName="Baseline Positives", append=TRUE, row.names=FALSE)
-      write.xlsx(pivTableView(), file, sheetName="Titer Pivot Table", append=TRUE, row.names=FALSE)
-      write.xlsx(pivTreatView(), file, sheetName="Treatment Emergent", append=TRUE, row.names=FALSE)
-      write.xlsx(myData()[these, , drop = FALSE], file, sheetName="Search Results", append=TRUE, row.names=FALSE)
+      write.xlsx(myData(), file, sheetName="Original", row.names=FALSE, showNA = FALSE)
+      write.xlsx(baselineFunc(), file, sheetName="Baselines", append=TRUE, row.names=FALSE, showNA = FALSE)
+      write.xlsx(noBaselineFunc(), file, sheetName="Missing Baselines", append=TRUE, row.names=FALSE, showNA = FALSE)
+      write.xlsx(bpFunc(), file, sheetName="Baseline Positives", append=TRUE, row.names=FALSE, showNA = FALSE)
+      write.xlsx(pivTableView(), file, sheetName="Subject Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
+      write.xlsx(pivTreatView(), file, sheetName="Treatment Emergent Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
+      write.xlsx(titerPivot(), file, sheetName="Titer Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
+      write.xlsx(myData()[these, , drop = FALSE], file, sheetName="Search Results", append=TRUE, row.names=FALSE, showNA = FALSE)
       
       
     })
