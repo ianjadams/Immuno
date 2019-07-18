@@ -20,19 +20,19 @@ ui<- shinyUI(fluidPage(
                          'text/comma-separated-values,text/plain',
                          '.csv')),
       
-      # text inputs for specifying values
+      #input: text input for specifying values
       textInput("baselineVisits", label = "Complete the Fields Below:", placeholder = "Name of 'Baseline Visit' value"),
       textInput("t1D", label = NULL, placeholder = "Name of 'Tier 1 Detected' value"),
       textInput("t1ND", label = NULL, placeholder = "Name of 'Tier 1 NOT Detected' value"),
       textInput("t2D", label = NULL, placeholder = "Name of 'Tier 2 Detected' value"),
       textInput("t2ND", label = NULL, placeholder = "Name of 'Tier 2 NOT Detected' value"),
       
-      #uiOutput('select'),
+      #input: MRD value field
       numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 100000000),
       verbatimTextOutput('mrdOut'),
       
       
-      # Input: Select method of filtering data ----
+      #input: select input for changing current view of the table
       selectInput("dropdown", "Select a View",
                   choices = c(Original = "original",
                               "Baselines" = "baseline",
@@ -44,16 +44,17 @@ ui<- shinyUI(fluidPage(
                   selected = "original"),
       
       
-      # Button
+      #download button
       downloadButton("downloadData", "Download All Tables")
       
     ),
     mainPanel(
       
-      # Output: Tabset w/ plot, summary, and table ----
+      #output: separate the page into specific tabs
       tabsetPanel(type = "tabs",
                   tabPanel("Table", varSelectInput("col", "Reorganize Visit Codes:", character(0), multiple = TRUE),
                            DT::dataTableOutput('contents')),
+                  tabPanel("Flags", DT::dataTableOutput('flag')),
                   tabPanel("Plot", plotOutput('plot')),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
                            br(),
@@ -75,7 +76,8 @@ server <- function(input, output, session){
   
   #create reactive table on data load
   #change Tier3 datatype to numeric and trim off "1:" from all values
-  #insert a 0 into all empty (NA) fields in Tier3
+  #insert 0 into all empty (NA) fields in Tier3
+  #update data to change user input BL value to "Baseline"
   myData <- reactive({
     inFile <- input$file1
     if (is.null(inFile)) return(NULL) 
@@ -91,7 +93,7 @@ server <- function(input, output, session){
   
   #begin global functions for table calculations and views
   
-  #creates table for baseline visits
+  #function: baseline visits
   baselineFunc <- function() {
     
     baseline <- filter(myData(), Visit == "Baseline")
@@ -101,7 +103,7 @@ server <- function(input, output, session){
   
   
   
-  #subjects missing baseline visits
+  #function: subjects missing baseline visits
   noBaselineFunc <- function() {
     
     rawData <- myData()
@@ -130,7 +132,7 @@ server <- function(input, output, session){
   
   
   
-  #creates table for baseline positive visits
+  #function: subjects who are Tier2 positive at baseline
   bpFunc <- function() {
     
     bp <- filter(myData(), Visit == "Baseline" & Tier2 == input$t2D)
@@ -151,27 +153,26 @@ server <- function(input, output, session){
   
   
   
-  #begin pivot table for titers by subject
+  #function: create pivot table for subjects across all visits
   pivotTableFunc <- function() {
     
     #pull unique Subject values and unique visit values
     groupRawData <- group_by(myData(), Subject, Visit)
     
-    #prepare Tier.3 values to be populated in the table
+    #prepare Tier3 values to be populated in the table
     summRawData <- summarise(groupRawData,
                              sumTiter = sum(Tier3))
     
-    #transform the rawData table to a pivot table, using Subjects as rows, Visits as columns, Tier.3 values as cells
+    #transform the rawData table to a pivot table, using Subjects as rows, Visits as columns, Tier3 values as cells
     rawDataTrans <- dcast(summRawData, Subject ~ Visit, value.var = "sumTiter")
     
-    #chronologically reorder columns by visit code
-    #get unique list of "Visit" codes and reorder the pivot table columns 
+    #gets each unique visit code and closely reorganizes them in chronological order 
     nams <- as.character(unique(myData()$Visit)) 
     nums <- sapply(nams, function(nm) which(names(rawDataTrans) %in% nm)) 
     rawDataTrans[, sort(nums)] <- rawDataTrans[, nams] 
     names(rawDataTrans)[sort(nums)] <- nams
     
-    #get max titer of each subject 
+    #get max titer of each subject after baseline
     maxTiter <- apply(rawDataTrans[-c(1:2)], 1, max, na.rm=TRUE)
     
     #append maxTiter to first column of pivot table
@@ -181,7 +182,7 @@ server <- function(input, output, session){
   
   
   
-  #begin treatment emergent calculations
+  #function: creates treatment emergent table
   treatEmerFunc <- function() {
     
     treatData <- pivotTableFunc()
@@ -189,10 +190,13 @@ server <- function(input, output, session){
     #takes in user input MRD value
     mrd <- input$mrdIn 
     
+    #creates table of treatment induced subjects
     negBaseTE <- filter(treatData, Baseline == 0 & maxTiter >= 2*mrd)
     
+    #creates table of treatment boosted subjects
     posBaseTE <- filter(treatData, Baseline != 0 & treatData$maxTiter >= 4*treatData$Baseline)
     
+    #combined table of treatment induced/boosted subjects
     emerTable <- rbind(negBaseTE, posBaseTE)
     
     if (dim(emerTable)[1] == 0) {
@@ -214,13 +218,9 @@ server <- function(input, output, session){
   #function: creates titer pivot table
   titerPivot <- function() {
     
+    #remove missing baseline subjects and subjects without visits after baseline
+    #only evaluable subjects are included in this table
     bpSubs <- filter(pivotTableFunc(), !(is.na(Baseline)), maxTiter != "-Inf")
-    
-    bpSubs <- data.frame(bpSubs$Baseline, bpSubs$maxTiter)
-    
-    titerPiv <- as.data.frame.matrix(addmargins(table(bpSubs[,1], bpSubs[,2])))
-    titerPiv <- cbind("Baseline Titer" = rownames(titerPiv), titerPiv)
-    return(titerPiv)
     
   } 
   
@@ -301,8 +301,6 @@ server <- function(input, output, session){
     #SHOW TITERS BY SUBJECT TABLE
     else if(input$dropdown == "subjects") {
       
-      # return(pivTableView())
-      
       bindedTiter <- pivTableView()
       
       #set NA and "-Inf" values to "-" for visibility
@@ -317,7 +315,7 @@ server <- function(input, output, session){
       
       emerTable <- pivTreatView()
       
-      #set NA and values to "-" for visibility
+      #set NA values to "-" for visibility
       emerTable[is.na(emerTable)] <- "-"
       
       return(emerTable)
@@ -326,7 +324,14 @@ server <- function(input, output, session){
     #SHOW TITER COUNTS PIVOT TABLE
     else if(input$dropdown == "titercounts") {
       
-      return(titerPivot())
+      bpSubs <- titerPivot()
+      
+      bpSubs <- data.frame(bpSubs$Baseline, bpSubs$maxTiter)
+      
+      #create pivot table for Baseline and maxTiter columns, append Sum of rows and columns to the table
+      titerPiv <- as.data.frame.matrix(addmargins(table(bpSubs[,1], bpSubs[,2])))
+      titerPiv <- cbind("Baseline Titer" = rownames(titerPiv), titerPiv)
+      return(titerPiv)
       
     }
     
@@ -337,10 +342,28 @@ server <- function(input, output, session){
   
   
   
+  #begin "MRD" input field
+  output$flag <- DT::renderDataTable({ 
+    
+    QC1 <- subset(myData(), Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
+    QC2 <- subset(myData(), Tier1 == input$t1ND & Tier2 == input$t2D)
+    QC3 <- subset(myData(), Tier1 == input$t1ND & Tier3 != 0)
+    
+    QC4 <- subset(myData(), Tier2 != input$t2DD & Tier2 != input$t2ND & Tier2 != "N/A" & Tier2 != "NA")
+    QC5 <- subset(myData(), Tier2 == input$t2ND & Tier3 != 0)
+    QC6 <- subset(myData(), Tier2 == input$t2D & Tier3 == 0)
+    
+    errorTable <- rbind(QC1, QC2, QC3, QC4, QC5, QC6)
+    
+  }, rownames = FALSE)
+  #end "MRD" input field
+  
+  
+  
   #begin "Plot" tab
   output$plot <- renderPlot({
     
-    #use titer pivot table to create frequency table of each unique titer AND drop titer value of zero
+    #use titer pivot table to create frequency table of each unique titer AND drop titer value of zero or "-Inf" (AKA no maxTiter)
     countTiter <- as.data.frame(table(pivotTableFunc()$maxTiter))
     names(countTiter) <- c("Titer", "Count")
     countTiter <- countTiter[!(countTiter$Titer == 0 | countTiter$Titer == "-Inf"), ]
@@ -373,7 +396,7 @@ server <- function(input, output, session){
   
   #begin "Summary" tab
   
-  #begin T1, T2, BASELINE table
+  #begin T1 and T2 table
   output$summary1 <- DT::renderDataTable({
     
     statsData <- myData()
@@ -404,7 +427,7 @@ server <- function(input, output, session){
     
     
     
-    # output table for Tier 1, Tier 2, and Baseline results
+    # output table for Tier 1 and Tier 2 results
     data.frame("SamplesTested" = c(allSamples, t2Tested),
                "Detected" = c(t1Pos, t2Pos),
                "PostiveRate" = c(putPR, conPR),
@@ -414,7 +437,7 @@ server <- function(input, output, session){
     
   }, options = list(dom = 't')
   ) 
-  #end T1, T2, BASELINE table
+  #end T1 and T2 table
   
   
   
@@ -422,10 +445,10 @@ server <- function(input, output, session){
   output$summary2 <- DT::renderDataTable({
     
     # num of evaluable subjects in dataset
-    numBLSubjects <- nrow(baselineFunc())
+    numEvalSubjects <- nrow(titerPivot())
     
     # percent of subjects evaluable for TE ADA
-    baseRate <- (numBLSubjects/numBLSubjects) * 100
+    baseRate <- (numEvalSubjects/numEvalSubjects) * 100
     baseRate <- round(baseRate, 2)
     
     
@@ -442,7 +465,7 @@ server <- function(input, output, session){
     }
     
     # percent of subjects positive at baseline
-    basePosRate <- (numBLPosSubjects/numBLSubjects) * 100
+    basePosRate <- (numBLPosSubjects/numEvalSubjects) * 100
     basePosRate <- round(basePosRate, 2)
     
     
@@ -459,7 +482,7 @@ server <- function(input, output, session){
     }
     
     # percent of subjects that are treatment emergent
-    teRate <- (numTESubjects/numBLSubjects) * 100
+    teRate <- (numTESubjects/numEvalSubjects) * 100
     teRate <- round(teRate, 2)
     
     
@@ -468,7 +491,7 @@ server <- function(input, output, session){
     numTISubjects <- nrow(subset(treatEmerFunc(), Baseline == 0))
     
     # percent of subjects that are treatment induced
-    tiRate <- (numTISubjects/numBLSubjects) * 100
+    tiRate <- (numTISubjects/numEvalSubjects) * 100
     tiRate <- round(tiRate, 2)
     
     
@@ -477,13 +500,13 @@ server <- function(input, output, session){
     numTBSubjects <- nrow(subset(treatEmerFunc(), Baseline != 0))
     
     # percent of subjects that are treatment boosted
-    tbRate <- (numTBSubjects/numBLSubjects) * 100
+    tbRate <- (numTBSubjects/numEvalSubjects) * 100
     tbRate <- round(tbRate, 2)
     
     
     
     # output table for Treatment Emergence results
-    data.frame("Count" = c(numBLSubjects, numBLPosSubjects, numTESubjects, numTISubjects, numTBSubjects),
+    data.frame("Count" = c(numEvalSubjects, numBLPosSubjects, numTESubjects, numTISubjects, numTBSubjects),
                "Rate" = c(baseRate, basePosRate, teRate, tiRate, tbRate),
                row.names = c("Subjects Evaluable for TE ADA", "Evaluable Subs with ADA Present at Baseline",
                              "Subjects TE ADA", "Treatment-Induced", "Treatment-Boosted"))
