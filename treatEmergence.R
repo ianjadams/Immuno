@@ -161,8 +161,3 @@ QC6 <- subset(rawData, Tier2 == "DETECTED" & Tier3 == 0)
 errorTable <- rbind(QC1, QC2, QC3, QC4, QC5, QC6)
 
 
-
-
-
-
-

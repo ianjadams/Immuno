@@ -342,7 +342,7 @@ server <- function(input, output, session){
   
   
   
-  #begin "MRD" input field
+  #begin "Flags" tab
   output$flag <- DT::renderDataTable({ 
     
     QC1 <- subset(myData(), Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
@@ -353,10 +353,12 @@ server <- function(input, output, session){
     QC5 <- subset(myData(), Tier2 == input$t2ND & Tier3 != 0)
     QC6 <- subset(myData(), Tier2 == input$t2D & Tier3 == 0)
     
-    errorTable <- rbind(QC1, QC2, QC3, QC4, QC5, QC6)
+    QC7 <- myData()[duplicated(myData()[, c("Subject", "Visit")]),]
+    
+    errorTable <- rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7)
     
   }, rownames = FALSE)
-  #end "MRD" input field
+  #end "Flags" tab
   
   
   
