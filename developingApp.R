@@ -26,6 +26,14 @@ ui<- shinyUI(fluidPage(
       textInput("t1ND", label = NULL, placeholder = "Name of 'Tier 1 NOT Detected' value"),
       textInput("t2D", label = NULL, placeholder = "Name of 'Tier 2 Detected' value"),
       textInput("t2ND", label = NULL, placeholder = "Name of 'Tier 2 NOT Detected' value"),
+      textInput("t4D", label = NULL, placeholder = "Name of 'Tier 4 Detected' value"),
+      textInput("t4ND", label = NULL, placeholder = "Name of 'Tier 4 NOT Detected' value"),
+      
+      #input: checkboxes for Tier 4 column
+      checkboxGroupInput("checkT4", "If applicable, include Tier 4 column:",
+                         c("No Tier 4" = "noT4",
+                           "Tier 4" = "T4"),
+                         selected = "noT4", inline = TRUE),
       
       #input: MRD value field
       numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 100000000),
@@ -398,7 +406,7 @@ server <- function(input, output, session){
   
   #begin "Summary" tab
   
-  #begin T1 and T2 table
+  #begin Tier table results
   output$summary1 <- DT::renderDataTable({
     
     statsData <- myData()
@@ -429,17 +437,41 @@ server <- function(input, output, session){
     
     
     
-    # output table for Tier 1 and Tier 2 results
-    data.frame("SamplesTested" = c(allSamples, t2Tested),
-               "Detected" = c(t1Pos, t2Pos),
-               "PostiveRate" = c(putPR, conPR),
-               row.names = c("Tier 1", "Tier 2"))
+    if(input$checkT4 == "noT4") {
+      
+      # output table for Tier 1 and Tier 2 results
+      data.frame("SamplesTested" = c(allSamples, t2Tested),
+                 "Detected" = c(t1Pos, t2Pos),
+                 "PostiveRate" = c(putPR, conPR),
+                 row.names = c("Tier 1", "Tier 2"))
+      
+    }
+    
+    else if(input$checkT4 == "T4") {
+      
+      # num of Tier 4 samples tested
+      t4Tested <- nrow(subset(statsData, Tier4 == input$t4D | Tier4 == input$t4ND))
+      
+      # num of Tier 4 detected samples
+      t4Pos <- nrow(subset(statsData, Tier4 == input$t4D))
+      
+      # positive rate (num of Tier 4 detected samples / num of Tier 2 detected samples)
+      t4PR <- (t4Pos/t2Pos) * 100
+      t4PR <- round(t4PR, 2)
+      
+      # output table for Tier 1, Tier 2, and Tier 4 results
+      data.frame("SamplesTested" = c(allSamples, t2Tested, t4Tested),
+                 "Detected" = c(t1Pos, t2Pos, t4Pos),
+                 "PostiveRate" = c(putPR, conPR, t4PR),
+                 row.names = c("Tier 1", "Tier 2", "Tier 4"))
+      
+    } 
     
     
     
-  }, options = list(dom = 't')
+  }, options = list(dom = 't', ordering = FALSE)
   ) 
-  #end T1 and T2 table
+  #end Tier table results
   
   
   
@@ -515,7 +547,7 @@ server <- function(input, output, session){
     
     
     
-  }, options = list(dom = 't')
+  }, options = list(dom = 't', ordering = FALSE)
   )
   #end Treatment Emergent table
   
