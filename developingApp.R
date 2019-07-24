@@ -44,7 +44,7 @@ ui<- shinyUI(fluidPage(
       selectInput("dropdown", "Select a View",
                   choices = c(Original = "original",
                               "Baselines" = "baseline",
-                              "Missing Baselines" = "nobaseline",
+                              "Unevaluated Subjects" = "uneval",
                               "Baseline Positives" = "bp",
                               "Subject Pivot Table" = "subjects",
                               "Treatment Emergent Pivot Table" = "te",
@@ -106,35 +106,6 @@ server <- function(input, output, session){
     
     baseline <- filter(myData(), Visit == "Baseline")
     return(baseline)
-    
-  }
-  
-  
-  
-  #function: subjects missing baseline visits
-  noBaselineFunc <- function() {
-    
-    rawData <- myData()
-    
-    baseline <- filter(rawData, Visit == "Baseline")
-    
-    allSubjects <- distinct(rawData, Subject)
-    
-    missingSubjects <- left_join(allSubjects, baseline, by = "Subject")
-    missingSubjects <- filter(missingSubjects, is.na(Visit))
-    missingSubjects <- subset(missingSubjects, select = "Subject")
-    
-    if (dim(missingSubjects)[1] == 0) {
-      
-      missingSubjects <- data.frame("EMPTY")
-      names(missingSubjects) <- "Subject"
-      return(missingSubjects)
-      
-    } else {
-      
-      return(missingSubjects)
-      
-    }
     
   }
   
@@ -263,6 +234,71 @@ server <- function(input, output, session){
     return(newTreatTable)
     
   }
+  
+  
+  
+  #function: subjects who are unevaluable
+  unEvalFunc <- function () {
+    
+    #function: subjects who are missing baseline visits
+    noBL <- function() {
+      
+      #find subjects who missed baseline
+      baseline <- filter(myData(), Visit == "Baseline")
+  
+      allSubjects <- distinct(myData(), Subject)
+  
+      missingSubjects <- left_join(allSubjects, baseline, by = "Subject")
+      missingSubjects <- filter(missingSubjects, is.na(Visit))
+      missingSubjects <- subset(missingSubjects, select = "Subject")
+      
+      #create column for missing info
+      if (dim(missingSubjects)[1] > 0) {
+  
+        missingSubjects$Premise <- "Missing Baseline"
+        return(missingSubjects)
+      
+        #populate empty table
+      } else if (dim(missingSubjects)[1] == 0) {
+  
+        placeHolder <- data.frame("EMPTY")
+        names(placeHolder) <- "Subject"
+        return(placeHolder)
+  
+      }
+    
+   }
+    
+  
+  
+    
+    #function: subjects who have no post-BL visits
+    noPostBL <- function() {
+    
+      #find subjects who missed post-baseline visits
+      subsNoPostBL <- filter(pivotTableFunc(), maxTiter == "-Inf")
+      subsNoPostBL <- subset(subsNoPostBL, select = "Subject")
+      
+      #create column for missing info
+      if (dim(subsNoPostBL)[1] > 0) {
+        
+        subsNoPostBL$Premise <- "Baseline w/o Follow-Up Visits"
+        return(subsNoPostBL)
+        
+        #populate empty table
+      } else if (dim(subsNoPostBL)[1] == 0) {
+        
+        placeHolder <- data.frame("EMPTY")
+        names(placeHolder) <- "Subject"
+        return(placeHolder)
+        
+      }
+    
+   }
+    
+    unEvalTable <- rbind(noBL(), noPostBL())
+    return(unEvalTable)
+  }
   #end global functions for table views
   
   
@@ -294,10 +330,10 @@ server <- function(input, output, session){
       return(baselineFunc())
       
     }
-    #SHOW MISSING BASELINE VISITS TABLE
-    else if(input$dropdown == "nobaseline") {
-      
-      return(noBaselineFunc())
+    #SHOW UNEVALUATED SUBJECTS TABLE
+    else if(input$dropdown == "uneval") {
+
+      return(unEvalFunc())
       
     }
     #SHOW BASELINE POSITIVE VISITS TABLE
@@ -559,14 +595,14 @@ server <- function(input, output, session){
     # num of unique subjects in dataset
     numAllSubjects <- nrow(pivotTableFunc())
     
-    # num of subjects missing baselines
-    if(noBaselineFunc()$Subject=="EMPTY") {
+    # num of unevaluated subjects
+    if(unEvalFunc()$Subject=="EMPTY") {
       
-      numMissBLSubjects <- 0
+      numUnEvalSubs <- 0
       
     } else {
       
-      numMissBLSubjects <- nrow(noBaselineFunc())
+      unEvalFunc <- nrow(unEvalFunc())
       
     }
     
@@ -576,8 +612,8 @@ server <- function(input, output, session){
     
     
     # output table for General Stats results
-    data.frame("Sort" = c(numAllSubjects, numMissBLSubjects, highTiter),
-               row.names = c("Total Unique Subjects", "Subjects Missing Baseline", "Highest Titer"))
+    data.frame("Sort" = c(numAllSubjects, unEvalFunc, highTiter),
+               row.names = c("Total Unique Subjects", "Unevaluated Subjects", "Highest Titer"))
     
     
     
@@ -597,7 +633,7 @@ server <- function(input, output, session){
       
       write.xlsx(myData(), file, sheetName="Original", row.names=FALSE, showNA = FALSE)
       write.xlsx(baselineFunc(), file, sheetName="Baselines", append=TRUE, row.names=FALSE, showNA = FALSE)
-      write.xlsx(noBaselineFunc(), file, sheetName="Missing Baselines", append=TRUE, row.names=FALSE, showNA = FALSE)
+      write.xlsx(unEvalFunc(), file, sheetName="Unevaluated Subjects", append=TRUE, row.names=FALSE, showNA = FALSE)
       write.xlsx(bpFunc(), file, sheetName="Baseline Positives", append=TRUE, row.names=FALSE, showNA = FALSE)
       write.xlsx(pivTableView(), file, sheetName="Subject Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
       write.xlsx(pivTreatView(), file, sheetName="Treatment Emergent Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
