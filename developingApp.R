@@ -29,8 +29,8 @@ ui<- shinyUI(fluidPage(
       textInput("t4D", label = NULL, placeholder = "Name of 'Tier 4 Detected' value"),
       textInput("t4ND", label = NULL, placeholder = "Name of 'Tier 4 NOT Detected' value"),
       
-      #input: checkboxes for Tier 4 column
-      checkboxGroupInput("checkT4", "If applicable, include Tier 4 column:",
+      #input: radio button to include Tier 4 column
+      radioButtons("checkT4", "If applicable, include Tier 4 column:",
                          c("No Tier 4" = "noT4",
                            "Tier 4" = "T4"),
                          selected = "noT4", inline = TRUE),
