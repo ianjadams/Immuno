@@ -44,8 +44,8 @@ ui<- shinyUI(fluidPage(
       selectInput("dropdown", "Select a View",
                   choices = c(Original = "original",
                               "Baselines" = "baseline",
-                              "Unevaluated Subjects" = "uneval",
                               "Baseline Positives" = "bp",
+                              "Unevaluated Subjects" = "uneval",
                               "Subject Pivot Table" = "subjects",
                               "Treatment Emergent Pivot Table" = "te",
                               "Titer Pivot Table" = "titercounts"),
@@ -63,7 +63,8 @@ ui<- shinyUI(fluidPage(
                   tabPanel("Table", varSelectInput("col", "Reorganize Visit Codes:", character(0), multiple = TRUE),
                            DT::dataTableOutput('contents')),
                   tabPanel("Flags", DT::dataTableOutput('flag')),
-                  tabPanel("Plot", plotOutput('plot')),
+                  tabPanel("Plot", plotOutput('plot'),
+                           verbatimTextOutput('sampleSize')),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
                            br(),
                            DT::dataTableOutput('summary2'),
@@ -261,7 +262,7 @@ server <- function(input, output, session){
         #populate empty table
       } else if (dim(missingSubjects)[1] == 0) {
   
-        placeHolder <- data.frame("EMPTY")
+        placeHolder <- data.frame("No Missing Baselines")
         names(placeHolder) <- "Subject"
         return(placeHolder)
   
@@ -288,7 +289,7 @@ server <- function(input, output, session){
         #populate empty table
       } else if (dim(subsNoPostBL)[1] == 0) {
         
-        placeHolder <- data.frame("EMPTY")
+        placeHolder <- data.frame("All Subjects w/Post-BL Follow-Up Visits")
         names(placeHolder) <- "Subject"
         return(placeHolder)
         
@@ -332,7 +333,7 @@ server <- function(input, output, session){
     }
     #SHOW UNEVALUATED SUBJECTS TABLE
     else if(input$dropdown == "uneval") {
-
+      
       return(unEvalFunc())
       
     }
@@ -389,17 +390,59 @@ server <- function(input, output, session){
   #begin "Flags" tab
   output$flag <- DT::renderDataTable({ 
     
-    QC1 <- subset(myData(), Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
-    QC2 <- subset(myData(), Tier1 == input$t1ND & Tier2 == input$t2D)
-    QC3 <- subset(myData(), Tier1 == input$t1ND & Tier3 != 0)
+    #create column "Premise"
+    allFlags <- myData()
+    allFlags$Premise <- "exp"
     
-    QC4 <- subset(myData(), Tier2 != input$t2DD & Tier2 != input$t2ND & Tier2 != "N/A" & Tier2 != "NA")
-    QC5 <- subset(myData(), Tier2 == input$t2ND & Tier3 != 0)
-    QC6 <- subset(myData(), Tier2 == input$t2D & Tier3 == 0)
     
-    QC7 <- myData()[duplicated(myData()[, c("Subject", "Visit")]),]
     
-    errorTable <- rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7)
+    #begin logical QC checks
+    QC1 <- subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
+    QC2 <- subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2D)
+    QC3 <- subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
+
+    QC4 <- subset(allFlags, Tier2 != input$t2D & Tier2 != input$t2ND & Tier2 != "N/A" & Tier2 != "NA")
+    QC5 <- subset(allFlags, Tier2 == input$t2ND & Tier3 != 0)
+    QC6 <- subset(allFlags, Tier2 == input$t2D & Tier3 == 0)
+    
+    QC7 <- allFlags[duplicated(allFlags[, c("Subject", "Visit")]), ]
+    #end logical QC checks
+
+    
+    
+    #begin populating Premise column with reasoning for each error in the table
+    try(if(QC1$Premise == "exp") {
+      QC1$Premise <- "T1 Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC2$Premise == "exp") {
+      QC2$Premise <- "T1(-) with T2(+)"
+    }, silent = TRUE)
+    
+    try(if(QC3$Premise == "exp") {
+      QC3$Premise <- "T1(-) with T3(+)"
+    }, silent = TRUE)
+    
+    try(if(QC4$Premise == "exp") {
+      QC4$Premise <- "T2 Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC5$Premise == "exp") {
+      QC5$Premise <- "T2(-) with T3(+)"
+    }, silent = TRUE)
+    
+    try(if(QC6$Premise == "exp") {
+      QC6$Premise <- "T2(+) with T3(-)"
+    }, silent = TRUE)
+    
+    try(if(QC7$Premise == "exp") {
+      QC7$Premise <- "Duplicate Visit for Subject"
+    }, silent = TRUE)
+    
+    
+    
+    #combine all rows that have any of the errors above
+    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7))
     
   }, rownames = FALSE)
   #end "Flags" tab
@@ -419,7 +462,7 @@ server <- function(input, output, session){
     plot1 <- ggplot(countTiter, aes(x = Titer, y = Count)) + 
       geom_bar(stat = "identity", color = "#337ab7", size = 0.6, fill = "#18bc9c", alpha = 0.7) + 
       geom_text(aes(label = Count), vjust = -0.3, color = "#2c3e50", size = 4.5) + 
-      ggtitle("Frequency of Highest Titer (Post-BL) per Subject") + 
+      ggtitle("Frequency of Highest Titer (Post-BL) per Subject*") + 
       theme_minimal()
     
     
@@ -436,6 +479,18 @@ server <- function(input, output, session){
     )
     
   })
+  
+  
+  
+  #begin "sample size" output field
+  output$sampleSize <- renderText({
+    
+    plotCount <- filter(pivotTableFunc(), maxTiter != 0, maxTiter != "-Inf")
+    
+    paste("n = ", nrow(plotCount), "    *may include subjects who had titers after missing baseline", sep="")
+    
+  })
+  #end "sample size" output field
   #end "Plot" tab
   
   
@@ -595,16 +650,8 @@ server <- function(input, output, session){
     # num of unique subjects in dataset
     numAllSubjects <- nrow(pivotTableFunc())
     
-    # num of unevaluated subjects
-    if(unEvalFunc()$Subject=="EMPTY") {
-      
-      numUnEvalSubs <- 0
-      
-    } else {
-      
-      unEvalFunc <- nrow(unEvalFunc())
-      
-    }
+    # num of unevaluable subjects in dataset
+    numUnEvalSubjects <- nrow(pivotTableFunc()) - nrow(titerPivot())
     
     # max titer of treatment emergence table
     highTiter <- max(treatEmerFunc()$maxTiter)
@@ -612,7 +659,7 @@ server <- function(input, output, session){
     
     
     # output table for General Stats results
-    data.frame("Sort" = c(numAllSubjects, unEvalFunc, highTiter),
+    data.frame("Sort" = c(numAllSubjects, numUnEvalSubjects, highTiter),
                row.names = c("Total Unique Subjects", "Unevaluated Subjects", "Highest Titer"))
     
     
