@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1561484654099.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4233443526",
+    "id" : "3FA82BC5",
+    "lastKnownWriteTime" : 1561484668,
+    "last_content_update" : 1561484668348,
+    "path" : "/lrlhps/users/c267377/ShinyApps/Immuno_Analysis_Now/treatEmergence.R",
+    "project_path" : "treatEmergence.R",
+    "properties" : {
+        "cursorPosition" : "14,27",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

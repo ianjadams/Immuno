@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1561749969183.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4062093487",
+    "id" : "3B6AA4CE",
+    "lastKnownWriteTime" : 1563205142,
+    "last_content_update" : 1563205142036,
+    "path" : "/lrlhps/users/c267377/ShinyApps/Immuno_Analysis_Now/developingApp.R",
+    "project_path" : "developingApp.R",
+    "properties" : {
+        "cursorPosition" : "106,29",
+        "scrollLine" : "94",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

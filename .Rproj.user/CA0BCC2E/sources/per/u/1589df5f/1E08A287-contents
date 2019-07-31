@@ -1,0 +1,34 @@
+data(iris)
+
+ui <- basicPage(
+  plotOutput("plot1", brush = "plot_brush"),
+  verbatimTextOutput("info"),mainPanel(downloadButton('downloadData', 'Download'))
+)
+
+
+server <- function(input, output) {
+  output$plot1 <- renderPlot({
+    ggplot(iris,aes(x=Sepal.Width,y=Sepal.Length)) + geom_point(aes(color=factor(Species))) + theme_bw()
+  })
+  
+  
+  selectedData <- reactive({
+    brushedPoints(iris, input$plot_brush)
+  })
+  
+  output$info <- renderPrint({
+    selectedData()
+  })
+  
+  output$downloadData <- downloadHandler(
+    filename = function() { 
+      paste('SelectedRows', '.csv', sep='') },
+    content = function(file) {
+      write.csv(selectedData(), file)
+    }
+  )
+  
+}
+
+
+shinyApp(ui, server)
