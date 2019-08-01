@@ -238,6 +238,21 @@ server <- function(input, output, session){
   
   
   
+  #create new titer pivot table with counts of each titer and sums in the rows and columns
+  pivTiterView <- function() {
+    
+    bpSubs <- titerPivot()
+    
+    bpSubs <- data.frame(bpSubs$Baseline, bpSubs$maxTiter)
+    
+    #create pivot table for Baseline and maxTiter columns, append Sum of rows and columns to the table
+    titerPiv <- as.data.frame.matrix(addmargins(table(bpSubs[,1], bpSubs[,2])))
+    titerPiv <- cbind("Baseline Titer" = rownames(titerPiv), titerPiv)
+    return(titerPiv)
+    
+  }
+  
+  
   #function: subjects who are unevaluable
   unEvalFunc <- function () {
     
@@ -262,8 +277,7 @@ server <- function(input, output, session){
         #populate empty table
       } else if (dim(missingSubjects)[1] == 0) {
         
-        placeHolder <- data.frame("No Missing Baselines")
-        names(placeHolder) <- "Subject"
+        placeHolder <- data.frame("Subject" = "EMPTY", "Premise" = "No Subjects Missing Baseline")
         return(placeHolder)
         
       }
@@ -289,8 +303,7 @@ server <- function(input, output, session){
         #populate empty table
       } else if (dim(subsNoPostBL)[1] == 0) {
         
-        placeHolder <- data.frame("All Subjects w/Post-BL Follow-Up Visits")
-        names(placeHolder) <- "Subject"
+        placeHolder <- data.frame("Subject" = "EMPTY", "Premise" = "No Subjects w/Baseline Visits Only")
         return(placeHolder)
         
       }
@@ -369,14 +382,8 @@ server <- function(input, output, session){
     #SHOW TITER COUNTS PIVOT TABLE
     else if(input$dropdown == "titercounts") {
       
-      bpSubs <- titerPivot()
       
-      bpSubs <- data.frame(bpSubs$Baseline, bpSubs$maxTiter)
-      
-      #create pivot table for Baseline and maxTiter columns, append Sum of rows and columns to the table
-      titerPiv <- as.data.frame.matrix(addmargins(table(bpSubs[,1], bpSubs[,2])))
-      titerPiv <- cbind("Baseline Titer" = rownames(titerPiv), titerPiv)
-      return(titerPiv)
+      return(pivTiterView())
       
     }
     
@@ -680,11 +687,11 @@ server <- function(input, output, session){
       
       write.xlsx(myData(), file, sheetName="Original", row.names=FALSE, showNA = FALSE)
       write.xlsx(baselineFunc(), file, sheetName="Baselines", append=TRUE, row.names=FALSE, showNA = FALSE)
-      write.xlsx(unEvalFunc(), file, sheetName="Unevaluated Subjects", append=TRUE, row.names=FALSE, showNA = FALSE)
       write.xlsx(bpFunc(), file, sheetName="Baseline Positives", append=TRUE, row.names=FALSE, showNA = FALSE)
+      write.xlsx(unEvalFunc(), file, sheetName="Unevaluated Subjects", append=TRUE, row.names=FALSE, showNA = FALSE)
       write.xlsx(pivTableView(), file, sheetName="Subject Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
       write.xlsx(pivTreatView(), file, sheetName="Treatment Emergent Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
-      write.xlsx(titerPivot(), file, sheetName="Titer Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
+      write.xlsx(pivTiterView(), file, sheetName="Titer Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
       write.xlsx(myData()[these, , drop = FALSE], file, sheetName="Search Results", append=TRUE, row.names=FALSE, showNA = FALSE)
       
       
