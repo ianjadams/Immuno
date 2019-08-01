@@ -4,6 +4,7 @@ library(ggplot2)
 library(readxl)
 library(reshape2)
 library(shiny)
+library(shinyjs)
 library(shinythemes)
 library(xlsx)
 
@@ -12,6 +13,7 @@ library(xlsx)
 #begin Shiny UI interface
 ui<- shinyUI(fluidPage(
   theme = shinytheme("flatly"),
+  useShinyjs(),
   titlePanel("Upload Vendor Data for Processing"),
   sidebarLayout(
     sidebarPanel(
@@ -314,6 +316,14 @@ server <- function(input, output, session){
     return(unEvalTable)
   }
   #end global functions for table views
+  
+  
+  
+  #hide or display Tier 4 detected/not detected fields
+  observeEvent(input$checkT4, {
+    toggle("t4D", anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t4ND", anim = TRUE, time = 0.5, animType = "slide")
+  })
   
   
   
