@@ -28,14 +28,28 @@ ui<- shinyUI(fluidPage(
       textInput("t1ND", label = NULL, placeholder = "Name of 'Tier 1 NOT Detected' value"),
       textInput("t2D", label = NULL, placeholder = "Name of 'Tier 2 Detected' value"),
       textInput("t2ND", label = NULL, placeholder = "Name of 'Tier 2 NOT Detected' value"),
-      textInput("t4D", label = NULL, placeholder = "Name of 'Tier 4 Detected' value"),
-      textInput("t4ND", label = NULL, placeholder = "Name of 'Tier 4 NOT Detected' value"),
+      textInput("t2bD", label = NULL, placeholder = "Name of 'Tier 2b Detected' value"),
+      textInput("t2bND", label = NULL, placeholder = "Name of 'Tier 2b NOT Detected' value"),
+      textInput("t2cD", label = NULL, placeholder = "Name of 'Tier 2c Detected' value"),
+      textInput("t2cND", label = NULL, placeholder = "Name of 'Tier 2c NOT Detected' value"),
+      textInput("t4aD", label = NULL, placeholder = "Name of 'Tier 4(a) Detected' value"),
+      textInput("t4aND", label = NULL, placeholder = "Name of 'Tier 4(a) NOT Detected' value"),
+      textInput("t4bD", label = NULL, placeholder = "Name of 'Tier 4b Detected' value"),
+      textInput("t4bND", label = NULL, placeholder = "Name of 'Tier 4b NOT Detected' value"),
+      textInput("t4cD", label = NULL, placeholder = "Name of 'Tier 4c Detected' value"),
+      textInput("t4cND", label = NULL, placeholder = "Name of 'Tier 4c NOT Detected' value"),
       
-      #input: radio button to include Tier 4 column
-      radioButtons("checkT4", "If applicable, include Tier 4 column:",
-                         c("No Tier 4" = "noT4",
-                           "Tier 4" = "T4"),
-                         selected = "noT4", inline = TRUE),
+      strong("If applicable, include additional columns:"),
+      
+      #input: checkboxes to include Tier 2 columns
+      checkboxInput("checkT2B", "Tier 2b", FALSE),
+      checkboxInput("checkT2C", "Tier 2c", FALSE),
+      
+      #input: checkboxes to include Tier 4 columns
+      checkboxInput("checkT4A", "Tier 4(a)", FALSE),
+      checkboxInput("checkT4B", "Tier 4b", FALSE),
+      checkboxInput("checkT4C", "Tier 4c", FALSE),
+      
       
       #input: MRD value field
       numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 100000000),
@@ -319,10 +333,45 @@ server <- function(input, output, session){
   
   
   
-  #hide or display Tier 4 detected/not detected fields
-  observeEvent(input$checkT4, {
-    toggle("t4D", anim = TRUE, time = 0.5, animType = "slide")
-    toggle("t4ND", anim = TRUE, time = 0.5, animType = "slide")
+  #display or hide Tier 2b input fields based on user checking the box
+  observe({
+    toggle("t2bD", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t2bND", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
+  })
+  
+  
+  
+  #display or hide Tier 2c input fields based on user checking the box
+  observe({
+    toggle("t2cD", condition = input$checkT2C, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t2cND", condition = input$checkT2C, anim = TRUE, time = 0.5, animType = "slide")
+  })
+  
+  
+  
+  #display or hide Tier 4(a) input fields based on user checking the box
+  #display or hide Tier 4b and Tier 4c checkboxes based on user checking the box
+  observe({
+    toggle("t4aD", condition = input$checkT4A, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t4aND", condition = input$checkT4A, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("checkT4B", condition = input$checkT4A, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("checkT4C", condition = input$checkT4A, anim = TRUE, time = 0.5, animType = "slide")
+  })
+  
+  
+  
+  #display or hide Tier 4b input fields based on user checking the box
+  observe({
+    toggle("t4bD", condition = input$checkT4B, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t4bND", condition = input$checkT4B, anim = TRUE, time = 0.5, animType = "slide")
+  })
+  
+  
+  
+  #display or hide Tier 4c input fields based on user checking the box
+  observe({
+    toggle("t4cD", condition = input$checkT4C, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t4cND", condition = input$checkT4C, anim = TRUE, time = 0.5, animType = "slide")
   })
   
   
