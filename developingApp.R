@@ -44,6 +44,8 @@ ui<- shinyUI(fluidPage(
       textInput("t2bND", label = NULL, placeholder = "Enter 'Tier 2b NOT Detected' value"),
       textInput("t2cD", label = NULL, placeholder = "Enter 'Tier 2c Detected' value"),
       textInput("t2cND", label = NULL, placeholder = "Enter 'Tier 2c NOT Detected' value"),
+      textInput("t2dD", label = NULL, placeholder = "Enter 'Tier 2d Detected' value"),
+      textInput("t2dND", label = NULL, placeholder = "Enter 'Tier 2d NOT Detected' value"),
       textInput("t4aD", label = NULL, placeholder = "Enter 'Tier 4(a) Detected' value"),
       textInput("t4aND", label = NULL, placeholder = "Enter 'Tier 4(a) NOT Detected' value"),
       textInput("t4bD", label = NULL, placeholder = "Enter 'Tier 4b Detected' value"),
@@ -58,6 +60,8 @@ ui<- shinyUI(fluidPage(
       #input: checkboxes to include Tier 2 columns
       prettyCheckbox("checkT2B", "Tier 2b", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       prettyCheckbox("checkT2C", "Tier 2c", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      prettyCheckbox("checkT2D", "Tier 2d", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      
       
       br(),
       
@@ -272,15 +276,15 @@ server <- function(input, output, session){
   #create new titer pivot table with counts of each titer and sums in the rows and columns
   pivTiterView <- function() {
     
-  bpSubs <- titerPivot()
-  
-  bpSubs <- data.frame(bpSubs$Baseline, bpSubs$maxTiter)
-  
-  #create pivot table for Baseline and maxTiter columns, append Sum of rows and columns to the table
-  titerPiv <- as.data.frame.matrix(addmargins(table(bpSubs[,1], bpSubs[,2])))
-  titerPiv <- cbind("Baseline Titer" = rownames(titerPiv), titerPiv)
-  return(titerPiv)
-  
+    bpSubs <- titerPivot()
+    
+    bpSubs <- data.frame(bpSubs$Baseline, bpSubs$maxTiter)
+    
+    #create pivot table for Baseline and maxTiter columns, append Sum of rows and columns to the table
+    titerPiv <- as.data.frame.matrix(addmargins(table(bpSubs[,1], bpSubs[,2])))
+    titerPiv <- cbind("Baseline Titer" = rownames(titerPiv), titerPiv)
+    return(titerPiv)
+    
   }
   
   
@@ -292,35 +296,35 @@ server <- function(input, output, session){
       
       #find subjects who missed baseline
       baseline <- filter(myData(), Visit == "Baseline")
-  
+      
       allSubjects <- distinct(myData(), Subject)
-  
+      
       missingSubjects <- left_join(allSubjects, baseline, by = "Subject")
       missingSubjects <- filter(missingSubjects, is.na(Visit))
       missingSubjects <- subset(missingSubjects, select = "Subject")
       
       #create column for missing info
       if (dim(missingSubjects)[1] > 0) {
-  
+        
         missingSubjects$Premise <- "Missing Baseline"
         return(missingSubjects)
-      
+        
         #populate empty table
       } else if (dim(missingSubjects)[1] == 0) {
-  
+        
         placeHolder <- data.frame("Subject" = "EMPTY", "Premise" = "No Subjects Missing Baseline")
         return(placeHolder)
-  
+        
       }
+      
+    }
     
-   }
     
-  
-  
+    
     
     #function: subjects who have no post-BL visits
     noPostBL <- function() {
-    
+      
       #find subjects who missed post-baseline visits
       subsNoPostBL <- filter(pivotTableFunc(), maxTiter == "-Inf")
       subsNoPostBL <- subset(subsNoPostBL, select = "Subject")
@@ -338,8 +342,8 @@ server <- function(input, output, session){
         return(placeHolder)
         
       }
-    
-   }
+      
+    }
     
     unEvalTable <- rbind(noBL(), noPostBL())
     return(unEvalTable)
@@ -361,6 +365,16 @@ server <- function(input, output, session){
   observe({
     toggle("t2cD", condition = input$checkT2C, anim = TRUE, time = 0.5, animType = "slide")
     toggle("t2cND", condition = input$checkT2C, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("checkT2D", condition = input$checkT2C, anim = TRUE, time = 0.5, animType = "slide")
+    
+  })
+  
+  
+  
+  #display or hide Tier 2d input fields based on user checking the box
+  observe({
+    toggle("t2dD", condition = input$checkT2D, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t2dND", condition = input$checkT2D, anim = TRUE, time = 0.5, animType = "slide")
   })
   
   
@@ -482,14 +496,14 @@ server <- function(input, output, session){
     QC1 <- subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
     QC2 <- subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2aD)
     QC3 <- subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
-
+    
     QC4 <- subset(allFlags, Tier2 != input$t2aD & Tier2 != input$t2aND & Tier2 != "N/A" & Tier2 != "NA")
     QC5 <- subset(allFlags, Tier2 == input$t2aND & Tier3 != 0)
     QC6 <- subset(allFlags, Tier2 == input$t2aD & Tier3 == 0)
     
     QC7 <- allFlags[duplicated(allFlags[, c("Subject", "Visit")]), ]
     #end logical QC checks
-
+    
     
     
     #begin populating Premise column with reasoning for each error in the table
@@ -587,8 +601,6 @@ server <- function(input, output, session){
     # num of samples
     allSamples <- nrow(subset(statsData, Tier1 == input$t1D | Tier1 == input$t1ND))
     
-    
-    
     # num of Tier 1 detected samples
     t1Pos <- nrow(subset(statsData, Tier1 == input$t1D))
     
@@ -596,49 +608,99 @@ server <- function(input, output, session){
     putPR <- (t1Pos/allSamples) * 100
     putPR <- round(putPR, 2)
     
-    
-    
     # num of Tier 2 samples tested
-    t2Tested <- nrow(subset(statsData, Tier2 == input$t2aD | Tier2 == input$t2aND))
+    t2aTested <- nrow(subset(statsData, Tier2 == input$t2aD | Tier2 == input$t2aND))
     
     # num of Tier 2 detected samples
-    t2Pos <- nrow(subset(statsData, Tier2 == input$t2aD))
+    t2aPos <- nrow(subset(statsData, Tier2 == input$t2aD))
     
     # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
-    conPR <- (t2Pos/t1Pos) * 100
+    conPR <- (t2aPos/t1Pos) * 100
     conPR <- round(conPR, 2)
     
     
     
-    if(input$checkT4A == FALSE) {
+    tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested),
+                            "Detected" = c(t1Pos, t2aPos),
+                            "PostiveRate" = c(putPR, conPR),
+                            row.names = c("Tier 1", "Tier 2"))
+    
+    
+    if(input$checkT2B == FALSE & input$checkT2C == FALSE & input$checkT4A == FALSE) {
       
       # output table for Tier 1 and Tier 2 results
-      data.frame("SamplesTested" = c(allSamples, t2Tested),
-                 "Detected" = c(t1Pos, t2Pos),
-                 "PostiveRate" = c(putPR, conPR),
-                 row.names = c("Tier 1", "Tier 2"))
-      
-    }
-    
-    else if(input$checkT4A == TRUE) {
-      
-      # num of Tier 4 samples tested
-      t4Tested <- nrow(subset(statsData, Tier4 == input$t4aD | Tier4 == input$t4aND))
-      
-      # num of Tier 4 detected samples
-      t4Pos <- nrow(subset(statsData, Tier4 == input$t4aD))
-      
-      # positive rate (num of Tier 4 detected samples / num of Tier 2 detected samples)
-      t4PR <- (t4Pos/t2Pos) * 100
-      t4PR <- round(t4PR, 2)
-      
-      # output table for Tier 1, Tier 2, and Tier 4 results
-      data.frame("SamplesTested" = c(allSamples, t2Tested, t4Tested),
-                 "Detected" = c(t1Pos, t2Pos, t4Pos),
-                 "PostiveRate" = c(putPR, conPR, t4PR),
-                 row.names = c("Tier 1", "Tier 2", "Tier 4"))
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested),
+                              "Detected" = c(t1Pos, t2aPos),
+                              "PostiveRate" = c(putPR, conPR),
+                              row.names = c("Tier 1", "Tier 2"))
       
     } 
+    
+    else if(input$checkT2C == TRUE) {
+      
+      # num of Tier 2 samples tested
+      t2bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
+      
+      # num of Tier 2 detected samples
+      t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2bPR <- (t2bPos/t2aPos) * 100
+      t2bPR <- round(t2bPR, 2)
+      
+      # num of Tier 2 samples tested
+      t2cTested <- nrow(subset(statsData, Tier2c == input$t2cD | Tier2c == input$t2cND))
+      
+      # num of Tier 2 detected samples
+      t2cPos <- nrow(subset(statsData, Tier2c == input$t2cD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2cPR <- (t2cPos/t2bPos) * 100
+      t2cPR <- round(t2cPR, 2)
+      
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested, t2cTested),
+                              "Detected" = c(t1Pos, t2aPos, t2bPos, t2cPos),
+                              "PostiveRate" = c(putPR, conPR, t2bPR, t2cPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 2b", "Tier 2c"))
+      
+      
+    } else if(input$checkT2B == TRUE) {
+      
+      # num of Tier 2 samples tested
+      t2bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
+      
+      # num of Tier 2 detected samples
+      t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2bPR <- (t2bPos/t2aPos) * 100
+      t2bPR <- round(t2bPR, 2)
+      
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested),
+                              "Detected" = c(t1Pos, t2aPos, t2bPos),
+                              "PostiveRate" = c(putPR, conPR, t2bPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 2b"))
+      
+      
+    } else {
+      
+      # num of Tier 2 samples tested
+      t4aTested <- nrow(subset(statsData, Tier4 == input$t4aD | Tier4 == input$t4aND))
+      
+      # num of Tier 2 detected samples
+      t4aPos <- nrow(subset(statsData, Tier4 == input$t4aD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t4aPR <- (t4aPos/t2aPos) * 100
+      t4aPR <- round(t4aPR, 2)
+      
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t4aTested),
+                              "Detected" = c(t1Pos, t2aPos, t4aPos),
+                              "PostiveRate" = c(putPR, conPR, t4aPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 4"))
+      
+      
+    }
     
     
     
