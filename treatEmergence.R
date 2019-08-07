@@ -3,6 +3,7 @@ library(DT)
 library(ggplot2)
 library(readxl)
 library(reshape2)
+library(shiny)
 
 
 
@@ -13,7 +14,7 @@ library(reshape2)
 
 
 #read in data
-rawData <- read_excel("AMAC_PBI_trimmed.xlsx")
+rawData <- read_excel("CGAM_PBI_trimmed.xlsx")
 
 #trim " 1: " from the values in Tier 3 column, set the column as numeric values
 rawData$Tier3 <- as.numeric(as.character(substring(rawData$Tier3, 3)))
@@ -21,7 +22,7 @@ rawData$Tier3 <- as.numeric(as.character(substring(rawData$Tier3, 3)))
 #set NA values to 0
 rawData$Tier3[is.na(rawData$Tier3)] <- 0
 
-rawData[rawData=="BL/V2"] <- "Baseline"
+rawData[rawData=="V2 BL"] <- "Baseline"
 
 
 
@@ -29,25 +30,52 @@ rawData[rawData=="BL/V2"] <- "Baseline"
 #MISSING BASELINES
 ##################
 
-
-
-baseline <- filter(rawData, Visit == "Baseline")
-
-allSubjects <- distinct(rawData, Subject)
-
-missingSubjects <- left_join(allSubjects, baseline, by = "Subject")
-missingSubjects <- filter(missingSubjects, is.na(Visit))
-missingSubjects <- subset(missingSubjects, select = "Subject")
-
-if (dim(missingSubjects)[1] == 0) {
+unevalFunc <- function() {
   
-  placeHolder <- data.frame("EMPTY")
-  names(placeHolder) <- "Subject"
-  return(placeHolder)
+  noBL <- function() {
+    
+    baseline <- filter(rawData, Visit == "Baseline")
+    
+    allSubjects <- distinct(rawData, Subject)
+    
+    missingSubjects <- left_join(allSubjects, baseline, by = "Subject")
+    missingSubjects <- filter(missingSubjects, is.na(Visit))
+    missingSubjects <- subset(missingSubjects, select = "Subject")
+    
+    if (dim(missingSubjects)[1] > 0) {
+      
+      missingSubjects$Premise <- "Baseline"
+      return(missingSubjects)
+      
+    } else if (dim(missingSubjects)[1] == 0) {
+      
+      placeHolder <- data.frame("Subject" = "EMPTY", "Premise" = "Missing Baseline")
+      return(placeHolder)
+      
+    }
+  }
   
+  noPostBL <- function() {
+    
+    subsNoPostBL <- filter(bindedTiter, maxTiter == "-Inf")
+    subsNoPostBL <- subset(subsNoPostBL, select = "Subject")
+    
+    if (dim(subsNoPostBL)[1] > 0) {
+      
+      subsNoPostBL$Premise <- "Post-Baseline Visit"
+      return(subsNoPostBL)
+      
+    } else if (dim(subsNoPostBL)[1] == 0) {
+      
+      placeHolder <- data.frame("Subject" = "EMPTY", "Premise" = "Baseline w/o All Follow-Up Visits")
+      return(placeHolder)
+      
+    }
+  }
+  
+  unEvalTable <- rbind(noBL(), noPostBL())
+  return(unEvalTable)
 }
-
-
 
 ##################
 #TITER PIVOT TABLE
@@ -150,14 +178,182 @@ plot1 + theme(
 
 
 
-QC1 <- subset(rawData, Tier1 != "NOTDETEC" & Tier1 != "DNR")
-QC2 <- subset(rawData, Tier1 == "NOTDETEC" & Tier2 == "DETECTED")
-QC3 <- subset(rawData, Tier1 == "NOTDETEC" & Tier3 != 0)
+rawData$Premise <- "exp"
 
-QC4 <- subset(rawData, Tier2 != "NOTDETEC" & Tier2 != "DETECTED")
-QC5 <- subset(rawData, Tier2 == "NOTDETEC" & Tier3 != 0)
-QC6 <- subset(rawData, Tier2 == "DETECTED" & Tier3 == 0)
+QC1 <- subset(rawData, Tier1 != "Not Detected" & Tier1 != "DNR")
+QC2 <- subset(rawData, Tier1 == "Not Detected" & Tier2 == "Detected")
+QC3 <- subset(rawData, Tier1 == "Not Detected" & Tier3 != 0)
 
-errorTable <- rbind(QC1, QC2, QC3, QC4, QC5, QC6)
+QC4 <- subset(rawData, Tier2 != "Not Detected" & Tier2 != "Detected")
+QC5 <- subset(rawData, Tier2 == "Not Detected" & Tier3 != 0)
+QC6 <- subset(rawData, Tier2 == "Detected" & Tier3 == 0)
+
+QC7 <- try(if("Tier4" %in% colnames(rawData)) {
+  
+  subset(rawData, Tier2 == "Not Detected" & Tier4 == "DETECTED")
+  
+})
+
+QC8 <- try(if("Tier4" %in% colnames(rawData)) {
+  
+  subset(rawData, Tier4 != "DETECTED" & Tier4 != "NOTDETEC")
+  
+})
+
+QC9 <- rawData[duplicated(rawData[, c("Subject", "Visit")]),]
+
+
+
+try(if(QC1$Premise == "exp") {
+  QC1$Premise <- "T1 Discrepant Value"
+}, silent = TRUE)
+
+try(if(QC2$Premise == "exp") {
+  QC2$Premise <- "T1(-) with T2(+)"
+}, silent = TRUE)
+
+try(if(QC3$Premise == "exp") {
+  QC3$Premise <- "T1(-) with T3(+)"
+}, silent = TRUE)
+
+try(if(QC4$Premise == "exp") {
+  QC4$Premise <- "T2 Discrepant Value"
+}, silent = TRUE)
+
+try(if(QC5$Premise == "exp") {
+  QC5$Premise <- "T2(-) with T3(+)"
+}, silent = TRUE)
+
+try(if(QC6$Premise == "exp") {
+  QC6$Premise <- "T2(+) with T3(-)"
+}, silent = TRUE)
+
+try(if(QC7$Premise == "exp") {
+  QC7$Premise <- "T2(-) with T4(+)"
+}, silent = TRUE)
+
+try(if(QC8$Premise == "exp") {
+  QC8$Premise <- "T4 Discrepant Value"
+}, silent = TRUE)
+
+try(if(QC9$Premise == "exp") {
+  QC9$Premise <- "Duplicate Visit for Subject"
+}, silent = TRUE)
+
+
+
+errortable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9))
+
+listErrors <- distinct(errortable, Premise)
+
+output <- c("The following QC checks appear in the table: ", listErrors)
+
+
+
+############
+#STATS TABLE
+############
+
+
+
+# num of samples
+allSamples <- nrow(subset(rawData, Tier1 == "Detected" | Tier1 == "Not Detected"))
+
+# num of Tier 1 detected samples
+t1Pos <- nrow(subset(rawData, Tier1 == "Detected"))
+
+# putative positive rate (num of Tier 1 detected samples / total samples)
+putPR <- (t1Pos/allSamples) * 100
+putPR <- round(putPR, 2)
+
+# num of Tier 2 samples tested
+t2Tested <- nrow(subset(rawData, Tier2 == "Detected" | Tier2 == "Not Detected"))
+
+# num of Tier 2 detected samples
+t2Pos <- nrow(subset(rawData, Tier2 == "Detected"))
+
+# confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+conPR <- (t2Pos/t1Pos) * 100
+conPR <- round(conPR, 2)
+
+tierTable <- data.frame("SamplesTested" = c(allSamples, t2Tested),
+                        "Detected" = c(t1Pos, t2Pos),
+                        "PostiveRate" = c(putPR, conPR),
+                        row.names = c("Tier 1", "Tier 2"))
+
+
+
+if("Tier2b" %in% colnames(rawData)) {
+  
+  cat("Yep, it's in there!\n");
+  
+  # num of Tier 2 samples tested
+  t2bTested <- nrow(subset(rawData, Tier2b == "Detected" | Tier2b == "Not Detected"))
+  
+  # num of Tier 2 detected samples
+  t2bPos <- nrow(subset(rawData, Tier2b == "Detected"))
+  
+  # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+  t2bPR <- (t2bPos/t2Pos) * 100
+  t2bPR <- round(t2bPR, 2)
+  
+  # tier2bDataTable <- data.frame("SamplesTested" = (t2bTested),
+  #                               "Detected" = (t2bPos),
+  #                               "PostiveRate" = (t2bPR),
+  #                               row.names = ("Tier 2b"))
+  
+  tierTable[nrow(tierTable) + 1,] = list(t2bTested, t2bPos, t2bPR)
+  
+  
+  
+}
+
+if ("Tier2c" %in% colnames(rawData)) {
+  
+  cat("Yep, it's in there!\n");
+  
+  # num of Tier 2 samples tested
+  t2cTested <- nrow(subset(rawData, Tier2c == "Detected" | Tier2c == "Not Detected"))
+  
+  # num of Tier 2 detected samples
+  t2cPos <- nrow(subset(rawData, Tier2c == "Detected"))
+  
+  # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+  t2cPR <- (t2cPos/t2bPos) * 100
+  t2cPR <- round(t2cPR, 2)
+  
+  tier2cDataTable <- data.frame("SamplesTested" = (t2cTested),
+                                "Detected" = (t2cPos),
+                                "PostiveRate" = (t2cPR),
+                                row.names = ("Tier 2c"))
+  
+  tierTable[nrow(tierTable) + 1,] = list(t2cTested, t2cPos, t2cPR)
+  
+}
+
+if("Tier2d" %in% colnames(rawData)) {
+  
+  cat("Yep, it's in there!\n");
+  
+  # num of Tier 2 samples tested
+  t2dTested <- nrow(subset(rawData, Tier2d == "Detected" | Tier2d == "Not Detected"))
+  
+  # num of Tier 2 detected samples
+  t2dPos <- nrow(subset(rawData, Tier2d == "Detected"))
+  
+  # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+  t2dPR <- (t2dPos/t2cPos) * 100
+  t2dPR <- round(t2dPR, 2)
+  
+  tier2dDataTable <- data.frame("SamplesTested" = (t2dTested),
+                                "Detected" = (t2dPos),
+                                "PostiveRate" = (t2dPR),
+                                row.names = ("Tier 2d"))
+  
+  tierTable[nrow(tierTable) + 1,] = list(t2dTested, t2dPos, t2dPR)
+  
+}
+
+finalTierTable <- try(rbind(tier1_2a_DataTable, tier2bDataTable, tier2cDataTable, tier2dDataTable))
 
 
