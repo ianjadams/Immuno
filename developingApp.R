@@ -100,7 +100,8 @@ ui<- shinyUI(fluidPage(
       tabsetPanel(type = "tabs",
                   tabPanel("Table", varSelectInput("col", "Reorganize Visit Codes:", character(0), multiple = TRUE),
                            DT::dataTableOutput('contents')),
-                  tabPanel("Flags", DT::dataTableOutput('flag')),
+                  tabPanel("Flags", DT::dataTableOutput('flag'),
+                           verbatimTextOutput('premises')),
                   tabPanel("Plot", plotOutput('plot'),
                            verbatimTextOutput('sampleSize')),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
@@ -422,6 +423,87 @@ server <- function(input, output, session){
   
   
   
+  #function: flag rows for QC checks
+  flagFunc <- function() {
+    
+    #create column "Premise"
+    allFlags <- myData()
+    allFlags$Premise <- "exp"
+    
+    
+    
+    #begin logical QC checks
+    QC1 <- subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
+    QC2 <- subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2aD)
+    QC3 <- subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
+    
+    QC4 <- subset(allFlags, Tier2 != input$t2aD & Tier2 != input$t2aND & Tier2 != "N/A" & Tier2 != "NA")
+    QC5 <- subset(allFlags, Tier2 == input$t2aND & Tier3 != 0)
+    QC6 <- subset(allFlags, Tier2 == input$t2aD & Tier3 == 0)
+    
+    QC7 <- try(if("Tier4" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aND & Tier4 == input$t4aD)
+      
+    })
+    
+    QC8 <- try(if("Tier4" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier4 != input$t4aD & Tier4 != input$t4aND)
+      
+    })
+    
+    QC9 <- allFlags[duplicated(allFlags[, c("Subject", "Visit")]), ]
+    #end logical QC checks
+    
+    
+    
+    #begin populating Premise column with reasoning for each error in the table
+    try(if(QC1$Premise == "exp") {
+      QC1$Premise <- "T1 Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC2$Premise == "exp") {
+      QC2$Premise <- "T1(-) with T2(+)"
+    }, silent = TRUE)
+    
+    try(if(QC3$Premise == "exp") {
+      QC3$Premise <- "T1(-) with T3(+)"
+    }, silent = TRUE)
+    
+    try(if(QC4$Premise == "exp") {
+      QC4$Premise <- "T2 Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC5$Premise == "exp") {
+      QC5$Premise <- "T2(-) with T3(+)"
+    }, silent = TRUE)
+    
+    try(if(QC6$Premise == "exp") {
+      QC6$Premise <- "T2(+) with T3(-)"
+    }, silent = TRUE)
+    
+    try(if(QC7$Premise == "exp") {
+      QC7$Premise <- "T2(-) with T4(+)"
+    }, silent = TRUE)
+    
+    try(if(QC8$Premise == "exp") {
+      QC8$Premise <- "T4 Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC9$Premise == "exp") {
+      QC9$Premise <- "Duplicate Visit for Subject"
+    }, silent = TRUE)
+    
+    
+    
+    #combine all rows that have any of the errors above
+    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9))
+    return(errorTable)
+    
+  }
+  
+  
   #begin "MRD" input field
   output$mrdOut <- renderText({ 
     
@@ -500,64 +582,26 @@ server <- function(input, output, session){
   
   
   #begin "Flags" tab
-  output$flag <- DT::renderDataTable({ 
+  output$flag <- DT::renderDataTable({
     
-    #create column "Premise"
-    allFlags <- myData()
-    allFlags$Premise <- "exp"
-    
-    
-    
-    #begin logical QC checks
-    QC1 <- subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
-    QC2 <- subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2aD)
-    QC3 <- subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
-    
-    QC4 <- subset(allFlags, Tier2 != input$t2aD & Tier2 != input$t2aND & Tier2 != "N/A" & Tier2 != "NA")
-    QC5 <- subset(allFlags, Tier2 == input$t2aND & Tier3 != 0)
-    QC6 <- subset(allFlags, Tier2 == input$t2aD & Tier3 == 0)
-    
-    QC7 <- allFlags[duplicated(allFlags[, c("Subject", "Visit")]), ]
-    #end logical QC checks
-    
-    
-    
-    #begin populating Premise column with reasoning for each error in the table
-    try(if(QC1$Premise == "exp") {
-      QC1$Premise <- "T1 Discrepant Value"
-    }, silent = TRUE)
-    
-    try(if(QC2$Premise == "exp") {
-      QC2$Premise <- "T1(-) with T2(+)"
-    }, silent = TRUE)
-    
-    try(if(QC3$Premise == "exp") {
-      QC3$Premise <- "T1(-) with T3(+)"
-    }, silent = TRUE)
-    
-    try(if(QC4$Premise == "exp") {
-      QC4$Premise <- "T2 Discrepant Value"
-    }, silent = TRUE)
-    
-    try(if(QC5$Premise == "exp") {
-      QC5$Premise <- "T2(-) with T3(+)"
-    }, silent = TRUE)
-    
-    try(if(QC6$Premise == "exp") {
-      QC6$Premise <- "T2(+) with T3(-)"
-    }, silent = TRUE)
-    
-    try(if(QC7$Premise == "exp") {
-      QC7$Premise <- "Duplicate Visit for Subject"
-    }, silent = TRUE)
-    
-    
-    
-    #combine all rows that have any of the errors above
-    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7))
+    return(flagFunc())
     
   }, rownames = FALSE)
   #end "Flags" tab
+  
+  
+  
+  #begin list of "Premises" output field
+  output$premises <- renderText({
+    
+    errorTable <- flagFunc()
+    
+    listErrors <- distinct(errorTable, Premise)
+    
+    paste(nrow(listErrors), "unique QC checks appear in the table:", listErrors)
+    
+  })
+  #end list of "Premises" output field
   
   
   
@@ -706,6 +750,16 @@ server <- function(input, output, session){
       t2bPR <- round(t2bPR, 2)
       
       # num of Tier 2 samples tested
+      t2cTested <- nrow(subset(statsData, Tier2c == input$t2cD | Tier2c == input$t2cND))
+      
+      # num of Tier 2 detected samples
+      t2cPos <- nrow(subset(statsData, Tier2c == input$t2cD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2cPR <- (t2cPos/t2aPos) * 100
+      t2cPR <- round(t2cPR, 2)
+      
+      # num of Tier 2 samples tested
       t4aTested <- nrow(subset(statsData, Tier4 == input$t4aD | Tier4 == input$t4aND))
       
       # num of Tier 2 detected samples
@@ -725,10 +779,10 @@ server <- function(input, output, session){
       t4bPR <- (t4bPos/t2aPos) * 100
       t4bPR <- round(t4bPR, 2)
       
-      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested, t4aTested, t4bTested),
-                              "Detected" = c(t1Pos, t2aPos, t2bPos, t4aPos, t4bPos),
-                              "PostiveRate" = c(putPR, conPR, t2bPR, t4aPR, t4bPR),
-                              row.names = c("Tier 1", "Tier 2", "Tier 2b", "Tier 4", "Tier 4b"))
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested, t2cTested, t4aTested, t4bTested),
+                              "Detected" = c(t1Pos, t2aPos, t2bPos, t2cPos, t4aPos, t4bPos),
+                              "PostiveRate" = c(putPR, conPR, t2bPR, t2cPR, t4aPR, t4bPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 2b", "Tier 2c", "Tier 4", "Tier 4b"))
       
     } else if(input$checkT4A == TRUE){
       
