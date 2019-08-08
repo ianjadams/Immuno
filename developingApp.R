@@ -434,26 +434,35 @@ server <- function(input, output, session){
     
     #begin logical QC checks
     QC1 <- subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
-    QC2 <- subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2aD)
-    QC3 <- subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
+    QC2 <- subset(allFlags, Tier1 == input$t1D & is.na(Tier2))
+    QC3 <- subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2aD)
+    QC4 <- subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
     
-    QC4 <- subset(allFlags, Tier2 != input$t2aD & Tier2 != input$t2aND & Tier2 != "N/A" & Tier2 != "NA")
-    QC5 <- subset(allFlags, Tier2 == input$t2aND & Tier3 != 0)
-    QC6 <- subset(allFlags, Tier2 == input$t2aD & Tier3 == 0)
+    QC5 <- subset(allFlags, Tier2 != input$t2aD & Tier2 != input$t2aND & Tier2 != "N/A" & Tier2 != "NA")
+    QC6 <- subset(allFlags, Tier2 == input$t2aND & Tier3 != 0)
+    QC7 <- subset(allFlags, Tier2 == input$t2aD & Tier3 == 0)
     
-    QC7 <- try(if("Tier4" %in% colnames(allFlags)) {
+    QC8 <- try(if("Tier4" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aND & Tier4 == is.na(Tier4))
+      
+    })
+    
+    QC9 <- try(if("Tier4" %in% colnames(allFlags)) {
       
       subset(allFlags, Tier2 == input$t2aND & Tier4 == input$t4aD)
       
     })
     
-    QC8 <- try(if("Tier4" %in% colnames(allFlags)) {
+    QC10 <- subset(allFlags, Tier3 %% input$mrdIn != 0 & Tier3 != 0)
+    
+    QC11 <- try(if("Tier4" %in% colnames(allFlags)) {
       
       subset(allFlags, Tier4 != input$t4aD & Tier4 != input$t4aND)
       
     })
     
-    QC9 <- allFlags[duplicated(allFlags[, c("Subject", "Visit")]), ]
+    QC12 <- allFlags[duplicated(allFlags[, c("Subject", "Visit")]), ]
     #end logical QC checks
     
     
@@ -464,41 +473,53 @@ server <- function(input, output, session){
     }, silent = TRUE)
     
     try(if(QC2$Premise == "exp") {
-      QC2$Premise <- "T1(-) with T2(+)"
+      QC2$Premise <- "T1(+) w/o Result in T2"
     }, silent = TRUE)
     
     try(if(QC3$Premise == "exp") {
-      QC3$Premise <- "T1(-) with T3(+)"
+      QC3$Premise <- "T1(-) with T2(+)"
     }, silent = TRUE)
     
     try(if(QC4$Premise == "exp") {
-      QC4$Premise <- "T2 Discrepant Value"
+      QC4$Premise <- "T1(-) with T3(+)"
     }, silent = TRUE)
     
     try(if(QC5$Premise == "exp") {
-      QC5$Premise <- "T2(-) with T3(+)"
+      QC5$Premise <- "T2 Discrepant Value"
     }, silent = TRUE)
     
     try(if(QC6$Premise == "exp") {
-      QC6$Premise <- "T2(+) with T3(-)"
+      QC6$Premise <- "T2(-) with T3(+)"
     }, silent = TRUE)
     
     try(if(QC7$Premise == "exp") {
-      QC7$Premise <- "T2(-) with T4(+)"
+      QC7$Premise <- "T2(+) with T3(-)"
     }, silent = TRUE)
     
     try(if(QC8$Premise == "exp") {
-      QC8$Premise <- "T4 Discrepant Value"
+      QC8$Premise <- "T2(+) w/o Result in T4"
     }, silent = TRUE)
     
     try(if(QC9$Premise == "exp") {
-      QC9$Premise <- "Duplicate Visit for Subject"
+      QC9$Premise <- "T2(-) with T4(+)"
+    }, silent = TRUE)
+    
+    try(if(QC10$Premise == "exp") {
+      QC10$Premise <- "Titer Below MRD or not Multiple of MRD"
+    }, silent = TRUE)
+    
+    try(if(QC11$Premise == "exp") {
+      QC11$Premise <- "T4 Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC12$Premise == "exp") {
+      QC12$Premise <- "Duplicate Visit for Subject"
     }, silent = TRUE)
     
     
     
     #combine all rows that have any of the errors above
-    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9))
+    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9, QC10, QC11, QC12))
     return(errorTable)
     
   }
