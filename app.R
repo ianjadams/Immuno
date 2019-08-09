@@ -4,7 +4,9 @@ library(ggplot2)
 library(readxl)
 library(reshape2)
 library(shiny)
+library(shinyjs)
 library(shinythemes)
+library(shinyWidgets)
 library(xlsx)
 
 
@@ -12,28 +14,64 @@ library(xlsx)
 #begin Shiny UI interface
 ui<- shinyUI(fluidPage(
   theme = shinytheme("flatly"),
+  
+  tags$head(
+    tags$style(HTML("
+    
+      #downloadData, #fileInput {
+        background-color: #18bc9c;
+      }
+
+    "))
+  ),
+  
+  useShinyjs(),
   titlePanel("Upload Vendor Data for Processing"),
   sidebarLayout(
     sidebarPanel(
-      fileInput('file1', 'Load a Dataset:',
+      fileInput("file1", 'Load a Dataset:',
                 accept=c('text/csv',
                          'text/comma-separated-values,text/plain',
                          '.csv')),
       
       #input: text input for specifying values
-      textInput("baselineVisits", label = "Complete the Fields Below:", placeholder = "Name of 'Baseline Visit' value"),
-      textInput("t1D", label = NULL, placeholder = "Name of 'Tier 1 Detected' value"),
-      textInput("t1ND", label = NULL, placeholder = "Name of 'Tier 1 NOT Detected' value"),
-      textInput("t2D", label = NULL, placeholder = "Name of 'Tier 2 Detected' value"),
-      textInput("t2ND", label = NULL, placeholder = "Name of 'Tier 2 NOT Detected' value"),
-      textInput("t4D", label = NULL, placeholder = "Name of 'Tier 4 Detected' value"),
-      textInput("t4ND", label = NULL, placeholder = "Name of 'Tier 4 NOT Detected' value"),
+      textInput("baselineVisits", label = "Complete the Fields Below:", placeholder = "Enter 'Baseline Visit' value"),
+      textInput("t1D", label = NULL, placeholder = "Enter Tier 1 'Detected' value"),
+      textInput("t1ND", label = NULL, placeholder = "Enter Tier 1 'NOT Detected' value"),
+      textInput("t2aD", label = NULL, placeholder = "Enter Tier 2(a) 'Detected' value"),
+      textInput("t2aND", label = NULL, placeholder = "Enter Tier 2(a) 'NOT Detected' value"),
+      textInput("t2bD", label = NULL, placeholder = "Enter Tier 2b 'Detected' value"),
+      textInput("t2bND", label = NULL, placeholder = "Enter Tier 2b 'NOT Detected' value"),
+      textInput("t2cD", label = NULL, placeholder = "Enter Tier 2c 'Detected' value"),
+      textInput("t2cND", label = NULL, placeholder = "Enter Tier 2c 'NOT Detected' value"),
+      textInput("t2dD", label = NULL, placeholder = "Enter Tier 2d 'Detected' value"),
+      textInput("t2dND", label = NULL, placeholder = "Enter Tier 2d 'NOT Detected' value"),
+      textInput("t4aD", label = NULL, placeholder = "Enter Tier 4(a) 'Detected' value"),
+      textInput("t4aND", label = NULL, placeholder = "Enter Tier 4(a) 'NOT Detected' value"),
+      textInput("t4bD", label = NULL, placeholder = "Enter Tier 4b 'Detected' value"),
+      textInput("t4bND", label = NULL, placeholder = "Enter Tier 4b 'NOT Detected' value"),
+      textInput("t4cD", label = NULL, placeholder = "Enter Tier 4c 'Detected' value"),
+      textInput("t4cND", label = NULL, placeholder = "Enter Tier 4c 'NOT Detected' value"),
+      textInput("t4dD", label = NULL, placeholder = "Enter Tier 4d 'Detected' value"),
+      textInput("t4dND", label = NULL, placeholder = "Enter Tier 4d 'NOT Detected' value"),
       
-      #input: radio button to include Tier 4 column
-      radioButtons("checkT4", "If applicable, include Tier 4 column:",
-                   c("No Tier 4" = "noT4",
-                     "Tier 4" = "T4"),
-                   selected = "noT4", inline = TRUE),
+      strong("If applicable, include additional columns:"),
+      
+      br(),
+      
+      #input: checkboxes to include Tier 2 columns
+      prettyCheckbox("checkT2B", "Tier 2b", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      prettyCheckbox("checkT2C", "Tier 2c", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      prettyCheckbox("checkT2D", "Tier 2d", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      
+      br(),
+      
+      #input: checkboxes to include Tier 4 columns
+      prettyCheckbox("checkT4A", "Tier 4(a)", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      prettyCheckbox("checkT4B", "Tier 4b", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      prettyCheckbox("checkT4C", "Tier 4c", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      prettyCheckbox("checkT4D", "Tier 4d", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      
       
       #input: MRD value field
       numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 100000000),
@@ -62,7 +100,8 @@ ui<- shinyUI(fluidPage(
       tabsetPanel(type = "tabs",
                   tabPanel("Table", varSelectInput("col", "Reorganize Visit Codes:", character(0), multiple = TRUE),
                            DT::dataTableOutput('contents')),
-                  tabPanel("Flags", DT::dataTableOutput('flag')),
+                  tabPanel("Flags", DT::dataTableOutput('flag'),
+                           verbatimTextOutput('premises')),
                   tabPanel("Plot", plotOutput('plot'),
                            verbatimTextOutput('sampleSize')),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
@@ -88,11 +127,13 @@ server <- function(input, output, session){
   #insert 0 into all empty (NA) fields in Tier3
   #update data to change user input BL value to "Baseline"
   myData <- reactive({
+    
     inFile <- input$file1
     if (is.null(inFile)) return(NULL) 
     initialData <- data.frame(read_excel(inFile$datapath))
-    initialData$Tier3 <- as.numeric(as.character(substring(initialData$Tier3, 3)))
     initialData$Tier3[is.na(initialData$Tier3)] <- 0
+    initialData$Tier3 <- ifelse(substring(initialData$Tier3, 1, 2) == "1:", 
+                                as.numeric(substring(initialData$Tier3, 3)), initialData$Tier3)
     initialData[initialData==input$baselineVisits] <- "Baseline"
     initialData
     
@@ -115,7 +156,7 @@ server <- function(input, output, session){
   #function: subjects who are Tier2 positive at baseline
   bpFunc <- function() {
     
-    bp <- filter(myData(), Visit == "Baseline" & Tier2 == input$t2D)
+    bp <- filter(myData(), Visit == "Baseline" & Tier2 == input$t2aD)
     
     if (dim(bp)[1] == 0) {
       
@@ -317,6 +358,175 @@ server <- function(input, output, session){
   
   
   
+  #display or hide Tier 2b input fields based on user checking the box
+  #display or hide Tier 2c checkbox based on user checking the box
+  observe({
+    toggle("t2bD", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t2bND", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("checkT2C", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
+  })
+  
+  
+  
+  #display or hide Tier 2c input fields based on user checking the box
+  #display or hide Tier 2d checkbox based on user checking the box
+  observe({
+    toggle("t2cD", condition = input$checkT2C, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t2cND", condition = input$checkT2C, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("checkT2D", condition = input$checkT2C, anim = TRUE, time = 0.5, animType = "slide")
+    
+  })
+  
+  
+  
+  #display or hide Tier 2d input fields based on user checking the box
+  observe({
+    toggle("t2dD", condition = input$checkT2D, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t2dND", condition = input$checkT2D, anim = TRUE, time = 0.5, animType = "slide")
+  })
+  
+  
+  
+  #display or hide Tier 4(a) input fields based on user checking the box
+  #display or hide Tier 4b checkbox based on user checking the box
+  observe({
+    toggle("t4aD", condition = input$checkT4A, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t4aND", condition = input$checkT4A, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("checkT4B", condition = input$checkT4A, anim = TRUE, time = 0.5, animType = "slide")
+  })
+  
+  
+  
+  #display or hide Tier 4b input fields based on user checking the box
+  #display or hide Tier 4c checkbox based on user checking the box
+  observe({
+    toggle("t4bD", condition = input$checkT4B, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t4bND", condition = input$checkT4B, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("checkT4C", condition = input$checkT4B, anim = TRUE, time = 0.5, animType = "slide")
+  })
+  
+  
+  
+  #display or hide Tier 4c input fields based on user checking the box
+  #display or hide Tier 4d checkbox based on user checking the box
+  observe({
+    toggle("t4cD", condition = input$checkT4C, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t4cND", condition = input$checkT4C, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("checkT4D", condition = input$checkT4C, anim = TRUE, time = 0.5, animType = "slide")
+  })
+  
+  
+  
+  #display or hide Tier 4d input fields based on user checking the box
+  observe({
+    toggle("t4dD", condition = input$checkT4D, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t4dND", condition = input$checkT4D, anim = TRUE, time = 0.5, animType = "slide")
+  })
+  
+  
+  
+  #function: flag rows for QC checks
+  flagFunc <- function() {
+    
+    #create column "Premise"
+    allFlags <- myData()
+    allFlags$Premise <- "exp"
+    
+    
+    
+    #begin logical QC checks
+    QC1 <- subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
+    QC2 <- subset(allFlags, Tier1 == input$t1D & is.na(Tier2))
+    QC3 <- subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2aD)
+    QC4 <- subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
+    
+    QC5 <- subset(allFlags, Tier2 != input$t2aD & Tier2 != input$t2aND & Tier2 != "N/A" & Tier2 != "NA")
+    QC6 <- subset(allFlags, Tier2 == input$t2aND & Tier3 != 0)
+    QC7 <- subset(allFlags, Tier2 == input$t2aD & Tier3 == 0)
+    
+    QC8 <- try(if("Tier4" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aND & Tier4 == is.na(Tier4))
+      
+    })
+    
+    QC9 <- try(if("Tier4" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aND & Tier4 == input$t4aD)
+      
+    })
+    
+    QC10 <- subset(allFlags, Tier3 %% input$mrdIn != 0 & Tier3 != 0)
+    
+    QC11 <- try(if("Tier4" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier4 != input$t4aD & Tier4 != input$t4aND)
+      
+    })
+    
+    QC12 <- allFlags[duplicated(allFlags[, c("Subject", "Visit")]), ]
+    #end logical QC checks
+    
+    
+    
+    #begin populating Premise column with reasoning for each error in the table
+    try(if(QC1$Premise == "exp") {
+      QC1$Premise <- "T1 Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC2$Premise == "exp") {
+      QC2$Premise <- "T1(+) w/o Result in T2"
+    }, silent = TRUE)
+    
+    try(if(QC3$Premise == "exp") {
+      QC3$Premise <- "T1(-) with T2(+)"
+    }, silent = TRUE)
+    
+    try(if(QC4$Premise == "exp") {
+      QC4$Premise <- "T1(-) with T3(+)"
+    }, silent = TRUE)
+    
+    try(if(QC5$Premise == "exp") {
+      QC5$Premise <- "T2 Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC6$Premise == "exp") {
+      QC6$Premise <- "T2(-) with T3(+)"
+    }, silent = TRUE)
+    
+    try(if(QC7$Premise == "exp") {
+      QC7$Premise <- "T2(+) with T3(-)"
+    }, silent = TRUE)
+    
+    try(if(QC8$Premise == "exp") {
+      QC8$Premise <- "T2(+) w/o Result in T4"
+    }, silent = TRUE)
+    
+    try(if(QC9$Premise == "exp") {
+      QC9$Premise <- "T2(-) with T4(+)"
+    }, silent = TRUE)
+    
+    try(if(QC10$Premise == "exp") {
+      QC10$Premise <- "Titer Below MRD or not Multiple of MRD"
+    }, silent = TRUE)
+    
+    try(if(QC11$Premise == "exp") {
+      QC11$Premise <- "T4 Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC12$Premise == "exp") {
+      QC12$Premise <- "Duplicate Visit for Subject"
+    }, silent = TRUE)
+    
+    
+    
+    #combine all rows that have any of the errors above
+    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9, QC10, QC11, QC12))
+    return(errorTable)
+    
+  }
+  
+  
   #begin "MRD" input field
   output$mrdOut <- renderText({ 
     
@@ -395,64 +605,26 @@ server <- function(input, output, session){
   
   
   #begin "Flags" tab
-  output$flag <- DT::renderDataTable({ 
+  output$flag <- DT::renderDataTable({
     
-    #create column "Premise"
-    allFlags <- myData()
-    allFlags$Premise <- "exp"
-    
-    
-    
-    #begin logical QC checks
-    QC1 <- subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
-    QC2 <- subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2D)
-    QC3 <- subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
-    
-    QC4 <- subset(allFlags, Tier2 != input$t2D & Tier2 != input$t2ND & Tier2 != "N/A" & Tier2 != "NA")
-    QC5 <- subset(allFlags, Tier2 == input$t2ND & Tier3 != 0)
-    QC6 <- subset(allFlags, Tier2 == input$t2D & Tier3 == 0)
-    
-    QC7 <- allFlags[duplicated(allFlags[, c("Subject", "Visit")]), ]
-    #end logical QC checks
-    
-    
-    
-    #begin populating Premise column with reasoning for each error in the table
-    try(if(QC1$Premise == "exp") {
-      QC1$Premise <- "T1 Discrepant Value"
-    }, silent = TRUE)
-    
-    try(if(QC2$Premise == "exp") {
-      QC2$Premise <- "T1(-) with T2(+)"
-    }, silent = TRUE)
-    
-    try(if(QC3$Premise == "exp") {
-      QC3$Premise <- "T1(-) with T3(+)"
-    }, silent = TRUE)
-    
-    try(if(QC4$Premise == "exp") {
-      QC4$Premise <- "T2 Discrepant Value"
-    }, silent = TRUE)
-    
-    try(if(QC5$Premise == "exp") {
-      QC5$Premise <- "T2(-) with T3(+)"
-    }, silent = TRUE)
-    
-    try(if(QC6$Premise == "exp") {
-      QC6$Premise <- "T2(+) with T3(-)"
-    }, silent = TRUE)
-    
-    try(if(QC7$Premise == "exp") {
-      QC7$Premise <- "Duplicate Visit for Subject"
-    }, silent = TRUE)
-    
-    
-    
-    #combine all rows that have any of the errors above
-    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7))
+    return(flagFunc())
     
   }, rownames = FALSE)
   #end "Flags" tab
+  
+  
+  
+  #begin list of "Premises" output field
+  output$premises <- renderText({
+    
+    errorTable <- flagFunc()
+    
+    listErrors <- distinct(errorTable, Premise)
+    
+    paste(nrow(listErrors), "unique QC checks appear in the table:", listErrors)
+    
+  })
+  #end list of "Premises" output field
   
   
   
@@ -512,8 +684,6 @@ server <- function(input, output, session){
     # num of samples
     allSamples <- nrow(subset(statsData, Tier1 == input$t1D | Tier1 == input$t1ND))
     
-    
-    
     # num of Tier 1 detected samples
     t1Pos <- nrow(subset(statsData, Tier1 == input$t1D))
     
@@ -521,49 +691,140 @@ server <- function(input, output, session){
     putPR <- (t1Pos/allSamples) * 100
     putPR <- round(putPR, 2)
     
-    
-    
     # num of Tier 2 samples tested
-    t2Tested <- nrow(subset(statsData, Tier2 == input$t2D | Tier2 == input$t2ND))
+    t2aTested <- nrow(subset(statsData, Tier2 == input$t2aD | Tier2 == input$t2aND))
     
     # num of Tier 2 detected samples
-    t2Pos <- nrow(subset(statsData, Tier2 == input$t2D))
+    t2aPos <- nrow(subset(statsData, Tier2 == input$t2aD))
     
     # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
-    conPR <- (t2Pos/t1Pos) * 100
+    conPR <- (t2aPos/t1Pos) * 100
     conPR <- round(conPR, 2)
     
     
     
-    if(input$checkT4 == "noT4") {
+    if(input$checkT2B == FALSE & input$checkT2C == FALSE & input$checkT2D == FALSE &
+       input$checkT4A == FALSE & input$checkT4B == FALSE & input$checkT4C == FALSE & input$checkT4D == FALSE) {
       
       # output table for Tier 1 and Tier 2 results
-      data.frame("SamplesTested" = c(allSamples, t2Tested),
-                 "Detected" = c(t1Pos, t2Pos),
-                 "PostiveRate" = c(putPR, conPR),
-                 row.names = c("Tier 1", "Tier 2"))
-      
-    }
-    
-    else if(input$checkT4 == "T4") {
-      
-      # num of Tier 4 samples tested
-      t4Tested <- nrow(subset(statsData, Tier4 == input$t4D | Tier4 == input$t4ND))
-      
-      # num of Tier 4 detected samples
-      t4Pos <- nrow(subset(statsData, Tier4 == input$t4D))
-      
-      # positive rate (num of Tier 4 detected samples / num of Tier 2 detected samples)
-      t4PR <- (t4Pos/t2Pos) * 100
-      t4PR <- round(t4PR, 2)
-      
-      # output table for Tier 1, Tier 2, and Tier 4 results
-      data.frame("SamplesTested" = c(allSamples, t2Tested, t4Tested),
-                 "Detected" = c(t1Pos, t2Pos, t4Pos),
-                 "PostiveRate" = c(putPR, conPR, t4PR),
-                 row.names = c("Tier 1", "Tier 2", "Tier 4"))
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested),
+                              "Detected" = c(t1Pos, t2aPos),
+                              "PostiveRate" = c(putPR, conPR),
+                              row.names = c("Tier 1", "Tier 2"))
       
     } 
+    
+    else if(input$checkT2C == TRUE) {
+      
+      # num of Tier 2 samples tested
+      t2bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
+      
+      # num of Tier 2 detected samples
+      t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2bPR <- (t2bPos/t2aPos) * 100
+      t2bPR <- round(t2bPR, 2)
+      
+      # num of Tier 2 samples tested
+      t2cTested <- nrow(subset(statsData, Tier2c == input$t2cD | Tier2c == input$t2cND))
+      
+      # num of Tier 2 detected samples
+      t2cPos <- nrow(subset(statsData, Tier2c == input$t2cD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2cPR <- (t2cPos/t2aPos) * 100
+      t2cPR <- round(t2cPR, 2)
+      
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested, t2cTested),
+                              "Detected" = c(t1Pos, t2aPos, t2bPos, t2cPos),
+                              "PostiveRate" = c(putPR, conPR, t2bPR, t2cPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 2b", "Tier 2c"))
+      
+      
+    } else if(input$checkT2B == TRUE) {
+      
+      # num of Tier 2 samples tested
+      t2bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
+      
+      # num of Tier 2 detected samples
+      t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2bPR <- (t2bPos/t2aPos) * 100
+      t2bPR <- round(t2bPR, 2)
+      
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested),
+                              "Detected" = c(t1Pos, t2aPos, t2bPos),
+                              "PostiveRate" = c(putPR, conPR, t2bPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 2b"))
+      
+      
+    } else if(input$checkT4B == TRUE){
+      
+      # num of Tier 2 samples tested
+      t2bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
+      
+      # num of Tier 2 detected samples
+      t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2bPR <- (t2bPos/t2aPos) * 100
+      t2bPR <- round(t2bPR, 2)
+      
+      # num of Tier 2 samples tested
+      t2cTested <- nrow(subset(statsData, Tier2c == input$t2cD | Tier2c == input$t2cND))
+      
+      # num of Tier 2 detected samples
+      t2cPos <- nrow(subset(statsData, Tier2c == input$t2cD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2cPR <- (t2cPos/t2aPos) * 100
+      t2cPR <- round(t2cPR, 2)
+      
+      # num of Tier 2 samples tested
+      t4aTested <- nrow(subset(statsData, Tier4 == input$t4aD | Tier4 == input$t4aND))
+      
+      # num of Tier 2 detected samples
+      t4aPos <- nrow(subset(statsData, Tier4 == input$t4aD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t4aPR <- (t4aPos/t2aPos) * 100
+      t4aPR <- round(t4aPR, 2)
+      
+      # num of Tier 2 samples tested
+      t4bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
+      
+      # num of Tier 2 detected samples
+      t4bPos <- nrow(subset(statsData, Tier4b == input$t4bD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t4bPR <- (t4bPos/t2aPos) * 100
+      t4bPR <- round(t4bPR, 2)
+      
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested, t2cTested, t4aTested, t4bTested),
+                              "Detected" = c(t1Pos, t2aPos, t2bPos, t2cPos, t4aPos, t4bPos),
+                              "PostiveRate" = c(putPR, conPR, t2bPR, t2cPR, t4aPR, t4bPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 2b", "Tier 2c", "Tier 4", "Tier 4b"))
+      
+    } else if(input$checkT4A == TRUE){
+      
+      # num of Tier 2 samples tested
+      t4aTested <- nrow(subset(statsData, Tier4 == input$t4aD | Tier4 == input$t4aND))
+      
+      # num of Tier 2 detected samples
+      t4aPos <- nrow(subset(statsData, Tier4 == input$t4aD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t4aPR <- (t4aPos/t2aPos) * 100
+      t4aPR <- round(t4aPR, 2)
+      
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t4aTested),
+                              "Detected" = c(t1Pos, t2aPos, t4aPos),
+                              "PostiveRate" = c(putPR, conPR, t4aPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 4"))
+      
+    }
     
     
     
