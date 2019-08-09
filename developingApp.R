@@ -127,11 +127,13 @@ server <- function(input, output, session){
   #insert 0 into all empty (NA) fields in Tier3
   #update data to change user input BL value to "Baseline"
   myData <- reactive({
+    
     inFile <- input$file1
     if (is.null(inFile)) return(NULL) 
     initialData <- data.frame(read_excel(inFile$datapath))
-    initialData$Tier3 <- as.numeric(as.character(substring(initialData$Tier3, 3)))
     initialData$Tier3[is.na(initialData$Tier3)] <- 0
+    initialData$Tier3 <- ifelse(substring(initialData$Tier3, 1, 2) == "1:", 
+                                as.numeric(substring(initialData$Tier3, 3)), initialData$Tier3)
     initialData[initialData==input$baselineVisits] <- "Baseline"
     initialData
     
