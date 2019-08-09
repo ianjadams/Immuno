@@ -14,15 +14,19 @@ library(shiny)
 
 
 #read in data
-rawData <- read_excel("CGAM_PBI_trimmed.xlsx")
-
-#trim " 1: " from the values in Tier 3 column, set the column as numeric values
-rawData$Tier3 <- as.numeric(as.character(substring(rawData$Tier3, 3)))
+rawData <- read_excel("AMAC_PBI_trimmed.xlsx")
 
 #set NA values to 0
 rawData$Tier3[is.na(rawData$Tier3)] <- 0
 
-rawData[rawData=="V2 BL"] <- "Baseline"
+#trim " 1: " from the values in Tier 3 column, set the column as numeric values
+rawData$Tier3 <- ifelse(substring(rawData$Tier3, 1, 2) == "1:", 
+                        as.numeric(as.character(substring(rawData$Tier3, 3))), rawData$Tier3)
+
+
+
+
+rawData[rawData=="BL/V2"] <- "Baseline"
 
 
 
@@ -180,27 +184,36 @@ plot1 + theme(
 
 rawData$Premise <- "exp"
 
-QC1 <- subset(rawData, Tier1 != "Not Detected" & Tier1 != "DNR")
-QC2 <- subset(rawData, Tier1 == "Not Detected" & Tier2 == "Detected")
-QC3 <- subset(rawData, Tier1 == "Not Detected" & Tier3 != 0)
+QC1 <- subset(rawData, Tier1 != "Preliminary Positive" & Tier1 != "Not Detected")
+QC2 <- subset(rawData, Tier1 == "Preliminary Positive" & is.na(Tier2))
+QC3 <- subset(rawData, Tier1 == "Preliminary Positive" & Tier2 == "Detected")
+QC4 <- subset(rawData, Tier1 == "Not Detected" & Tier3 != 0)
 
-QC4 <- subset(rawData, Tier2 != "Not Detected" & Tier2 != "Detected")
-QC5 <- subset(rawData, Tier2 == "Not Detected" & Tier3 != 0)
-QC6 <- subset(rawData, Tier2 == "Detected" & Tier3 == 0)
+QC5 <- subset(rawData, Tier2 != "Not Detected" & Tier2 != "Detected")
+QC6 <- subset(rawData, Tier2 == "Not Detected" & Tier3 != 0)
+QC7 <- subset(rawData, Tier2 == "Detected" & Tier3 == 0)
 
-QC7 <- try(if("Tier4" %in% colnames(rawData)) {
+QC8 <- try(if("Tier4" %in% colnames(rawData)) {
+  
+  subset(rawData, Tier2 == "Detected" & is.na(Tier4))
+  
+})
+
+QC9 <- try(if("Tier4" %in% colnames(rawData)) {
   
   subset(rawData, Tier2 == "Not Detected" & Tier4 == "DETECTED")
   
 })
 
-QC8 <- try(if("Tier4" %in% colnames(rawData)) {
+QC10 <- subset(rawData, Tier3 %% mrd != 0 & Tier3 != 0)
+
+QC11 <- try(if("Tier4" %in% colnames(rawData)) {
   
   subset(rawData, Tier4 != "DETECTED" & Tier4 != "NOTDETEC")
   
 })
 
-QC9 <- rawData[duplicated(rawData[, c("Subject", "Visit")]),]
+QC12 <- rawData[duplicated(rawData[, c("Subject", "Visit")]),]
 
 
 
@@ -209,40 +222,52 @@ try(if(QC1$Premise == "exp") {
 }, silent = TRUE)
 
 try(if(QC2$Premise == "exp") {
-  QC2$Premise <- "T1(-) with T2(+)"
+  QC2$Premise <- "T1(+) w/o Result in T2"
 }, silent = TRUE)
 
 try(if(QC3$Premise == "exp") {
-  QC3$Premise <- "T1(-) with T3(+)"
+  QC3$Premise <- "T1(-) with T2(+)"
 }, silent = TRUE)
 
 try(if(QC4$Premise == "exp") {
-  QC4$Premise <- "T2 Discrepant Value"
+  QC4$Premise <- "T1(-) with T3(+)"
 }, silent = TRUE)
 
 try(if(QC5$Premise == "exp") {
-  QC5$Premise <- "T2(-) with T3(+)"
+  QC5$Premise <- "T2 Discrepant Value"
 }, silent = TRUE)
 
 try(if(QC6$Premise == "exp") {
-  QC6$Premise <- "T2(+) with T3(-)"
+  QC6$Premise <- "T2(-) with T3(+)"
 }, silent = TRUE)
 
 try(if(QC7$Premise == "exp") {
-  QC7$Premise <- "T2(-) with T4(+)"
+  QC7$Premise <- "T2(+) with T3(-)"
 }, silent = TRUE)
 
 try(if(QC8$Premise == "exp") {
-  QC8$Premise <- "T4 Discrepant Value"
+  QC8$Premise <- "T2(+) w/o Result in T4"
 }, silent = TRUE)
 
 try(if(QC9$Premise == "exp") {
-  QC9$Premise <- "Duplicate Visit for Subject"
+  QC9$Premise <- "T2(-) with T4(+)"
+}, silent = TRUE)
+
+try(if(QC10$Premise == "exp") {
+  QC10$Premise <- "T3 < MRD or not Multiple of MRD"
+}, silent = TRUE)
+
+try(if(QC11$Premise == "exp") {
+  QC11$Premise <- "T4 Discrepant Value"
+}, silent = TRUE)
+
+try(if(QC12$Premise == "exp") {
+  QC12$Premise <- "Duplicate Visit for Subject"
 }, silent = TRUE)
 
 
 
-errortable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9))
+errortable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9, QC10, QC11, QC12))
 
 listErrors <- distinct(errortable, Premise)
 
@@ -257,20 +282,20 @@ output <- c("The following QC checks appear in the table: ", listErrors)
 
 
 # num of samples
-allSamples <- nrow(subset(rawData, Tier1 == "Detected" | Tier1 == "Not Detected"))
+allSamples <- nrow(subset(rawData, Tier1 == "DNR" | Tier1 == "NOTDETEC"))
 
 # num of Tier 1 detected samples
-t1Pos <- nrow(subset(rawData, Tier1 == "Detected"))
+t1Pos <- nrow(subset(rawData, Tier1 == "DNR"))
 
 # putative positive rate (num of Tier 1 detected samples / total samples)
 putPR <- (t1Pos/allSamples) * 100
 putPR <- round(putPR, 2)
 
 # num of Tier 2 samples tested
-t2Tested <- nrow(subset(rawData, Tier2 == "Detected" | Tier2 == "Not Detected"))
+t2Tested <- nrow(subset(rawData, Tier2 == "DETECTED" | Tier2 == "NOTDETEC"))
 
 # num of Tier 2 detected samples
-t2Pos <- nrow(subset(rawData, Tier2 == "Detected"))
+t2Pos <- nrow(subset(rawData, Tier2 == "DETECTED"))
 
 # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
 conPR <- (t2Pos/t1Pos) * 100
@@ -283,76 +308,32 @@ tierTable <- data.frame("SamplesTested" = c(allSamples, t2Tested),
 
 
 
-if("Tier2b" %in% colnames(rawData)) {
+try(if("Tier4" %in% colnames(rawData)) {
   
   cat("Yep, it's in there!\n");
   
   # num of Tier 2 samples tested
-  t2bTested <- nrow(subset(rawData, Tier2b == "Detected" | Tier2b == "Not Detected"))
+  t4aTested <- nrow(subset(rawData, Tier4 == "DETECTED" | Tier4 == "NOTDETEC"))
   
   # num of Tier 2 detected samples
-  t2bPos <- nrow(subset(rawData, Tier2b == "Detected"))
+  t4aPos <- nrow(subset(rawData, Tier4 == "DETECTED"))
   
   # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
-  t2bPR <- (t2bPos/t2Pos) * 100
-  t2bPR <- round(t2bPR, 2)
+  t4aPR <- (t4aPos/t2Pos) * 100
+  t4aPR <- round(t4aPR, 2)
   
-  # tier2bDataTable <- data.frame("SamplesTested" = (t2bTested),
-  #                               "Detected" = (t2bPos),
-  #                               "PostiveRate" = (t2bPR),
-  #                               row.names = ("Tier 2b"))
+  tierTable[nrow(tierTable) + 1,]
   
-  tierTable[nrow(tierTable) + 1,] = list(t2bTested, t2bPos, t2bPR)
+  t4aTable<- data.frame("SamplesTested" = (t4aTested),
+                        "Detected" = (t4aPos),
+                        "PostiveRate" = (t4aPR),
+                        row.names = c("Tier 4"))
   
+  tierTable2 <- try(rbind(tierTable, t4aTable))
   
-  
-}
+})
 
-if ("Tier2c" %in% colnames(rawData)) {
-  
-  cat("Yep, it's in there!\n");
-  
-  # num of Tier 2 samples tested
-  t2cTested <- nrow(subset(rawData, Tier2c == "Detected" | Tier2c == "Not Detected"))
-  
-  # num of Tier 2 detected samples
-  t2cPos <- nrow(subset(rawData, Tier2c == "Detected"))
-  
-  # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
-  t2cPR <- (t2cPos/t2bPos) * 100
-  t2cPR <- round(t2cPR, 2)
-  
-  tier2cDataTable <- data.frame("SamplesTested" = (t2cTested),
-                                "Detected" = (t2cPos),
-                                "PostiveRate" = (t2cPR),
-                                row.names = ("Tier 2c"))
-  
-  tierTable[nrow(tierTable) + 1,] = list(t2cTested, t2cPos, t2cPR)
-  
-}
 
-if("Tier2d" %in% colnames(rawData)) {
-  
-  cat("Yep, it's in there!\n");
-  
-  # num of Tier 2 samples tested
-  t2dTested <- nrow(subset(rawData, Tier2d == "Detected" | Tier2d == "Not Detected"))
-  
-  # num of Tier 2 detected samples
-  t2dPos <- nrow(subset(rawData, Tier2d == "Detected"))
-  
-  # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
-  t2dPR <- (t2dPos/t2cPos) * 100
-  t2dPR <- round(t2dPR, 2)
-  
-  tier2dDataTable <- data.frame("SamplesTested" = (t2dTested),
-                                "Detected" = (t2dPos),
-                                "PostiveRate" = (t2dPR),
-                                row.names = ("Tier 2d"))
-  
-  tierTable[nrow(tierTable) + 1,] = list(t2dTested, t2dPos, t2dPR)
-  
-}
 
 finalTierTable <- try(rbind(tier1_2a_DataTable, tier2bDataTable, tier2cDataTable, tier2dDataTable))
 
