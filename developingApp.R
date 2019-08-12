@@ -965,8 +965,9 @@ server <- function(input, output, session){
     
     HTML( 
       
-      '<div id = "premises">List of all possible QC flags are included below:</div>',
+      '<h4>List of all possible QC flags are included below:</h4>',
       '<br />',
+      
         '<ol>',
       
             '<li><b>T1 Discrepant Value</b></li>',
@@ -1018,7 +1019,28 @@ server <- function(input, output, session){
                 '<li>Subjects who have duplicate instances of the same visit code</li>',
               '</ul>',
       
-        '</ol>'
+        '</ol>',
+      
+      '<br />',
+      
+        '<h4>Premises for summary statistics are included below:</h4>',
+        '<br />',
+      
+          '<ol>',
+          
+            '<li><b>SamplesTested</b> is sum of user-entered Detected & Not Detected values in each Tier</li>',
+            '<li><b>Detected</b> is sum of user-entered Detected values in each Tier</li>',
+            '<li><b>PositiveRate</b> is # of <b>Detected</b> / # of <b>SamplesTested</b></li>',
+            '<li><b>Evaluable Subjects</b> are those that have Baseline visit and at least 1 follow-up visit</li>',
+            '<li><b>Unevaluated Subjects</b> are those that either:</li>',
+              '<ul>',
+                '<li>missed Baseline</li>',
+                '<li>have Baseline visit without any follow-up visits</li>',
+              '</ul>',
+            '<li><b>Total Unique Subjects</b> is sum of <b>Evaluable</b> and <b>Unevaluated</b> subjects in the study</li>',
+            '<li><b>Highest Titer</b> is the maximum Post-Baseline titer in the study</li>',
+      
+          '</ol>'
           
           )
     
