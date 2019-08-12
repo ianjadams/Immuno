@@ -108,7 +108,8 @@ ui<- shinyUI(fluidPage(
                            br(),
                            DT::dataTableOutput('summary2'),
                            br(),
-                           DT::dataTableOutput('summary3'))
+                           DT::dataTableOutput('summary3')),
+                  tabPanel("Help", uiOutput('help'))
       )
     )
   )
@@ -509,7 +510,7 @@ server <- function(input, output, session){
     }, silent = TRUE)
     
     try(if(QC10$Premise == "exp") {
-      QC10$Premise <- "Titer Below MRD or not Multiple of MRD"
+      QC10$Premise <- "T3 Titer Below MRD or not Multiple of MRD"
     }, silent = TRUE)
     
     try(if(QC11$Premise == "exp") {
@@ -743,7 +744,6 @@ server <- function(input, output, session){
                               "PostiveRate" = c(putPR, conPR, t2bPR, t2cPR),
                               row.names = c("Tier 1", "Tier 2", "Tier 2b", "Tier 2c"))
       
-      
     } else if(input$checkT2B == TRUE) {
       
       # num of Tier 2 samples tested
@@ -760,7 +760,6 @@ server <- function(input, output, session){
                               "Detected" = c(t1Pos, t2aPos, t2bPos),
                               "PostiveRate" = c(putPR, conPR, t2bPR),
                               row.names = c("Tier 1", "Tier 2", "Tier 2b"))
-      
       
     } else if(input$checkT4B == TRUE){
       
@@ -809,7 +808,7 @@ server <- function(input, output, session){
                               "PostiveRate" = c(putPR, conPR, t2bPR, t2cPR, t4aPR, t4bPR),
                               row.names = c("Tier 1", "Tier 2", "Tier 2b", "Tier 2c", "Tier 4", "Tier 4b"))
       
-    } else if(input$checkT4A == TRUE){
+    } else if(input$checkT4A == TRUE) {
       
       # num of Tier 2 samples tested
       t4aTested <- nrow(subset(statsData, Tier4 == input$t4aD | Tier4 == input$t4aND))
@@ -960,6 +959,70 @@ server <- function(input, output, session){
       
     })
   #end "Download All Tables" button
+  
+  
+  output$help <- renderUI({
+    
+    HTML( 
+      
+      '<div id = "premises">List of all possible QC flags are included below:</div>',
+      '<br />',
+        '<ol>',
+      
+            '<li><b>T1 Discrepant Value</b></li>',
+              '<ul>',
+                '<li>T1 value is neither of the user-entered values for T1 Detected and T1 Not Detected (this will flag rows such as QNS, CANCEL, PEND, etc.)</li>',
+              '</ul>',
+            '<li><b>T1(+) w/o Result in T2</b></li>',
+              '<ul>',
+                '<li>T1 value is Detected but result in T2 is missing</li>',
+              '</ul>',
+            '<li><b>T1(-) with T2(+)</b></li>',
+              '<ul>',
+                '<li>T1 value is Not Detected but T2 value is Detected</li>',
+              '</ul>',
+            '<li><b>T1(-) with T3(+)</b></li>',
+              '<ul>',
+                '<li>T1 value is Not Detected but T3 value is not 0 (indicating there was a reported titer)</li>',
+              '</ul>',
+            '<li><b>T2 Discrepant Value</b></li>',
+              '<ul>',
+                '<li>T2 value is neither of the user-entered values for T2 Detected and T2 Not Detected (this will flag rows such as QNS, CANCEL, PEND, etc.)</li>',
+              '</ul>',
+            '<li><b>T2(-) with T3(+)</b></li>',
+              '<ul>',
+                '<li>T2 value is Not Detected but T3 value is not 0 (indicating there was a reported titer)</li>',
+              '</ul>',
+            '<li><b>T2(+) with T3(-)</b></li>',
+              '<ul>',
+                '<li>T2 value is Detected but T3 value is 0 (indicating there should be a reported titer, but it might be missing)</li>',
+              '</ul>',
+            '<li><b>T2(+) w/o Result in T4</b></li>',
+              '<ul>',
+                '<li>T2 value is Detected but result in T4 is missing</li>',
+              '</ul>',
+            '<li><b>T2(-) with T4(+)</b></li>',
+              '<ul>',
+                '<li>T2 value is Not Detected but T4 value is Detected</li>',
+              '</ul>',
+            '<li><b>T3 Discrepant Value</b></li>',
+              '<ul>',
+                '<li>Titer value is below MRD or not multiple of MRD</li>',
+              '</ul>',
+            '<li><b>T4 Discrepant Value</b></li>',
+              '<ul>',
+                '<li>T4 value is neither of the user-entered values for T4 Detected and T4 Not Detected (this will flag rows such as QNS, CANCEL, PEND, etc.)</li>',
+              '</ul>',
+            '<li><b>Duplicate Visit for Subject</b></li>',
+              '<ul>',
+                '<li>Subjects who have duplicate instances of the same visit code</li>',
+              '</ul>',
+      
+        '</ol>'
+          
+          )
+    
+  })
   
   
   
