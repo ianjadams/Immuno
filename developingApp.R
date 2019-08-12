@@ -510,7 +510,7 @@ server <- function(input, output, session){
     }, silent = TRUE)
     
     try(if(QC10$Premise == "exp") {
-      QC10$Premise <- "T3 Titer Below MRD or not Multiple of MRD"
+      QC10$Premise <- "T3 Discrepant Value"
     }, silent = TRUE)
     
     try(if(QC11$Premise == "exp") {
