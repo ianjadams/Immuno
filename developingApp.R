@@ -29,13 +29,13 @@ ui<- shinyUI(fluidPage(
   titlePanel("Upload Vendor Data for Processing"),
   sidebarLayout(
     sidebarPanel(
-      fileInput("file1", 'Load a Dataset:',
+      fileInput("file1", 'Load a dataset:',
                 accept=c('text/csv',
                          'text/comma-separated-values,text/plain',
                          '.csv')),
       
       #input: text input for specifying values
-      textInput("baselineVisits", label = "Complete the Fields Below:", placeholder = "Enter 'Baseline Visit' value"),
+      textInput("baselineVisits", label = "Complete the fields below:", placeholder = "Enter 'Baseline Visit' value"),
       textInput("t1D", label = NULL, placeholder = "Enter Tier 1 'Detected' value"),
       textInput("t1ND", label = NULL, placeholder = "Enter Tier 1 'NOT Detected' value"),
       textInput("t2aD", label = NULL, placeholder = "Enter Tier 2(a) 'Detected' value"),
@@ -79,7 +79,7 @@ ui<- shinyUI(fluidPage(
       
       
       #input: select input for changing current view of the table
-      selectInput("dropdown", "Select a View",
+      selectInput("dropdown", "Select a view",
                   choices = c(Original = "original",
                               "Baselines" = "baseline",
                               "Baseline Positives" = "bp",
@@ -131,10 +131,12 @@ server <- function(input, output, session){
     inFile <- input$file1
     if (is.null(inFile)) return(NULL) 
     initialData <- data.frame(read_excel(inFile$datapath))
-    initialData$Tier3[is.na(initialData$Tier3)] <- 0
     initialData$Tier3 <- ifelse(substring(initialData$Tier3, 1, 2) == "1:", 
-                                as.numeric(substring(initialData$Tier3, 3)), initialData$Tier3)
+                                as.numeric(as.character(substring(initialData$Tier3, 3))),
+                                as.numeric(as.character(initialData$Tier3)))
+    initialData$Tier3[is.na(initialData$Tier3)] <- 0
     initialData[initialData==input$baselineVisits] <- "Baseline"
+    as.data.frame(initialData)
     initialData
     
   })
@@ -190,7 +192,7 @@ server <- function(input, output, session){
     #gets each unique visit code and closely reorganizes them in chronological order 
     nams <- as.character(unique(myData()$Visit)) 
     nums <- sapply(nams, function(nm) which(names(rawDataTrans) %in% nm)) 
-    rawDataTrans[, sort(nums)] <- rawDataTrans[, nams] 
+    rawDataTrans[, sort(nums)] <- rawDataTrans[, nams]
     names(rawDataTrans)[sort(nums)] <- nams
     
     #get max titer of each subject after baseline
@@ -446,7 +448,7 @@ server <- function(input, output, session){
     
     QC8 <- try(if("Tier4" %in% colnames(allFlags)) {
       
-      subset(allFlags, Tier2 == input$t2aND & Tier4 == is.na(Tier4))
+      subset(allFlags, Tier2 == input$t2aD & Tier4 == is.na(Tier4))
       
     })
     
