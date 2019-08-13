@@ -26,7 +26,7 @@ ui<- shinyUI(fluidPage(
   ),
   
   useShinyjs(),
-  titlePanel("Upload Vendor Data for Processing"),
+  titlePanel("LEM's Immuno Analysis Now for Vendor Data"),
   sidebarLayout(
     sidebarPanel(
       fileInput("file1", 'Load a dataset:',
@@ -714,10 +714,10 @@ server <- function(input, output, session){
                               "Detected" = c(t1Pos, t2aPos),
                               "PostiveRate" = c(putPR, conPR),
                               row.names = c("Tier 1", "Tier 2"))
-      
-    } 
     
-    else if(input$checkT2C == TRUE) {
+    
+      
+    } else if(input$checkT4D == TRUE) {
       
       # num of Tier 2 samples tested
       t2bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
@@ -739,12 +739,52 @@ server <- function(input, output, session){
       t2cPR <- (t2cPos/t2aPos) * 100
       t2cPR <- round(t2cPR, 2)
       
-      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested, t2cTested),
-                              "Detected" = c(t1Pos, t2aPos, t2bPos, t2cPos),
-                              "PostiveRate" = c(putPR, conPR, t2bPR, t2cPR),
-                              row.names = c("Tier 1", "Tier 2", "Tier 2b", "Tier 2c"))
+      # num of Tier 2 samples tested
+      t4aTested <- nrow(subset(statsData, Tier4 == input$t4aD | Tier4 == input$t4aND))
       
-    } else if(input$checkT2B == TRUE) {
+      # num of Tier 2 detected samples
+      t4aPos <- nrow(subset(statsData, Tier4 == input$t4aD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t4aPR <- (t4aPos/t2aPos) * 100
+      t4aPR <- round(t4aPR, 2)
+      
+      # num of Tier 2 samples tested
+      t4bTested <- nrow(subset(statsData, Tier4b == input$t4bD | Tier4b == input$t4bND))
+      
+      # num of Tier 2 detected samples
+      t4bPos <- nrow(subset(statsData, Tier4b == input$t4bD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t4bPR <- (t4bPos/t2aPos) * 100
+      t4bPR <- round(t4bPR, 2)
+      
+      # num of Tier 2 samples tested
+      t4cTested <- nrow(subset(statsData, Tier4c == input$t4cD | Tier4c == input$t4cND))
+      
+      # num of Tier 2 detected samples
+      t4cPos <- nrow(subset(statsData, Tier4c == input$t4cD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t4cPR <- (t4cPos/t2bPos) * 100
+      t4cPR <- round(t4cPR, 2)
+      
+      # num of Tier 2 samples tested
+      t4dTested <- nrow(subset(statsData, Tier4d == input$t4dD | Tier4d == input$t4dND))
+      
+      # num of Tier 2 detected samples
+      t4dPos <- nrow(subset(statsData, Tier4d == input$t4dD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t4dPR <- (t4dPos/t2cPos) * 100
+      t4dPR <- round(t4dPR, 2)
+      
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested, t2cTested, t4aTested, t4bTested, t4cTested, t4dTested),
+                              "Detected" = c(t1Pos, t2aPos, t2bPos, t2cPos, t4aPos, t4bPos, t4cPos, t4dPos),
+                              "PostiveRate" = c(putPR, conPR, t2bPR, t2cPR, t4aPR, t4bPR, t4cPR, t4dPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 2b", "Tier 2c", "Tier 4", "Tier 4b", "Tier 4c", "Tier 4d"))
+      
+    } else if(input$checkT4C == TRUE) {
       
       # num of Tier 2 samples tested
       t2bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
@@ -756,12 +796,52 @@ server <- function(input, output, session){
       t2bPR <- (t2bPos/t2aPos) * 100
       t2bPR <- round(t2bPR, 2)
       
-      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested),
-                              "Detected" = c(t1Pos, t2aPos, t2bPos),
-                              "PostiveRate" = c(putPR, conPR, t2bPR),
-                              row.names = c("Tier 1", "Tier 2", "Tier 2b"))
+      # num of Tier 2 samples tested
+      t2cTested <- nrow(subset(statsData, Tier2c == input$t2cD | Tier2c == input$t2cND))
       
-    } else if(input$checkT4B == TRUE){
+      # num of Tier 2 detected samples
+      t2cPos <- nrow(subset(statsData, Tier2c == input$t2cD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2cPR <- (t2cPos/t2aPos) * 100
+      t2cPR <- round(t2cPR, 2)
+      
+      # num of Tier 2 samples tested
+      t4aTested <- nrow(subset(statsData, Tier4 == input$t4aD | Tier4 == input$t4aND))
+      
+      # num of Tier 2 detected samples
+      t4aPos <- nrow(subset(statsData, Tier4 == input$t4aD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t4aPR <- (t4aPos/t2aPos) * 100
+      t4aPR <- round(t4aPR, 2)
+      
+      # num of Tier 2 samples tested
+      t4bTested <- nrow(subset(statsData, Tier4b == input$t4bD | Tier4b == input$t4bND))
+      
+      # num of Tier 2 detected samples
+      t4bPos <- nrow(subset(statsData, Tier4b == input$t4bD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t4bPR <- (t4bPos/t2aPos) * 100
+      t4bPR <- round(t4bPR, 2)
+      
+      # num of Tier 2 samples tested
+      t4cTested <- nrow(subset(statsData, Tier4c == input$t4cD | Tier4c == input$t4cND))
+      
+      # num of Tier 2 detected samples
+      t4cPos <- nrow(subset(statsData, Tier4c == input$t4cD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t4cPR <- (t4cPos/t2bPos) * 100
+      t4cPR <- round(t4cPR, 2)
+      
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested, t2cTested, t4aTested, t4bTested, t4cTested),
+                              "Detected" = c(t1Pos, t2aPos, t2bPos, t2cPos, t4aPos, t4bPos, t4cPos),
+                              "PostiveRate" = c(putPR, conPR, t2bPR, t2cPR, t4aPR, t4bPR, t4cPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 2b", "Tier 2c", "Tier 4", "Tier 4b", "Tier 4c"))
+      
+    } else if(input$checkT4B == TRUE) {
       
       # num of Tier 2 samples tested
       t2bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
@@ -824,6 +904,50 @@ server <- function(input, output, session){
                               "Detected" = c(t1Pos, t2aPos, t4aPos),
                               "PostiveRate" = c(putPR, conPR, t4aPR),
                               row.names = c("Tier 1", "Tier 2", "Tier 4"))
+      
+    } else if(input$checkT2C == TRUE) {
+      
+      # num of Tier 2 samples tested
+      t2bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
+      
+      # num of Tier 2 detected samples
+      t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2bPR <- (t2bPos/t2aPos) * 100
+      t2bPR <- round(t2bPR, 2)
+      
+      # num of Tier 2 samples tested
+      t2cTested <- nrow(subset(statsData, Tier2c == input$t2cD | Tier2c == input$t2cND))
+      
+      # num of Tier 2 detected samples
+      t2cPos <- nrow(subset(statsData, Tier2c == input$t2cD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2cPR <- (t2cPos/t2aPos) * 100
+      t2cPR <- round(t2cPR, 2)
+      
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested, t2cTested),
+                              "Detected" = c(t1Pos, t2aPos, t2bPos, t2cPos),
+                              "PostiveRate" = c(putPR, conPR, t2bPR, t2cPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 2b", "Tier 2c"))
+      
+    } else if(input$checkT2B == TRUE) {
+      
+      # num of Tier 2 samples tested
+      t2bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
+      
+      # num of Tier 2 detected samples
+      t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
+      
+      # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+      t2bPR <- (t2bPos/t2aPos) * 100
+      t2bPR <- round(t2bPR, 2)
+      
+      tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested, t2bTested),
+                              "Detected" = c(t1Pos, t2aPos, t2bPos),
+                              "PostiveRate" = c(putPR, conPR, t2bPR),
+                              row.names = c("Tier 1", "Tier 2", "Tier 2b"))
       
     }
     
@@ -929,7 +1053,7 @@ server <- function(input, output, session){
     
     # output table for General Stats results
     data.frame("Sort" = c(numAllSubjects, numUnEvalSubjects, highTiter),
-               row.names = c("Total Unique Subjects", "Unevaluated Subjects", "Highest Titer"))
+               row.names = c("Total Unique Subjects", "Unevaluated Subjects", "Highest Post-Baseline Titer"))
     
     
     
