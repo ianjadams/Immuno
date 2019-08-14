@@ -706,7 +706,7 @@ server <- function(input, output, session){
     
     
     
-    tierTable <- data.frame("SamplesTested" = c(allSamples, t2aTested),
+    tier1and2Rows <- data.frame("SamplesTested" = c(allSamples, t2aTested),
                              "Detected" = c(t1Pos, t2aPos),
                              "PostiveRate" = c(putPR, conPR),
                              row.names = c("Tier 1", "Tier 2"))
@@ -876,8 +876,145 @@ server <- function(input, output, session){
     })
     
     
-    finalTierTable <- try(rbind(tierTable, tier2bRow(), tier2cRow(), tier4aRow()))
-    subset(finalTierTable, SamplesTested != "NA")
+    
+    tier4bRow <- try(if("Tier4b" %in% colnames(statsData)) {
+      
+      rowFunc <- function() {
+        
+        cat("T4b exists\n");
+        
+        # num of Tier 2 samples tested
+        t4bTested <- nrow(subset(statsData, Tier4b == input$t4bD | Tier4b == input$t4bND))
+        
+        # num of Tier 2 detected samples
+        t4bPos <- nrow(subset(statsData, Tier4b == input$t4bD))
+        
+        # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+        t4bPR <- round((t4bPos/t2aPos * 100), 2)
+        
+        t4bTable<- data.frame("SamplesTested" = (t4bTested),
+                              "Detected" = (t4bPos),
+                              "PostiveRate" = (t4bPR),
+                              row.names = c("Tier 4b"))
+        
+        return(t4bTable)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        cat("T4b column does not exist\n");
+        
+        t4bTable<- data.frame("SamplesTested" = ("NA"),
+                              "Detected" = ("NA"),
+                              "PostiveRate" = (0),
+                              row.names = c("Tier 4b"))
+        
+        return(t4bTable)
+      }
+      
+    })
+    
+    
+    
+    tier4cRow <- try(if("Tier4c" %in% colnames(statsData)) {
+      
+      rowFunc <- function() {
+        
+        cat("T4c exists\n");
+        
+        # num of Tier 2 samples tested
+        t4cTested <- nrow(subset(statsData, Tier4c == input$t4cD | Tier4c == input$t4cND))
+        
+        # num of Tier 2 detected samples
+        t4cPos <- nrow(subset(statsData, Tier4c == input$t4cD))
+        
+        # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+        t4cPR <- round((t4cPos/tier2bRow()$t2bPos * 100), 2)
+        
+        t4cTable<- data.frame("SamplesTested" = (t4cTested),
+                              "Detected" = (t4cPos),
+                              "PostiveRate" = (t4cPR),
+                              row.names = c("Tier 4c"))
+        
+        return(t4cTable)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        cat("T4c column does not exist\n");
+        
+        t4cTable<- data.frame("SamplesTested" = ("NA"),
+                              "Detected" = ("NA"),
+                              "PostiveRate" = (0),
+                              row.names = c("Tier 4c"))
+        
+        return(t4cTable)
+      }
+      
+    })
+    
+    
+    
+    tier4dRow <- try(if("Tier4d" %in% colnames(statsData)) {
+      
+      rowFunc <- function() {
+        
+        cat("T4d exists\n");
+        
+        # num of Tier 2 samples tested
+        t4dTested <- nrow(subset(statsData, Tier4d == input$t4dD | Tier4d == input$t4dND))
+        
+        # num of Tier 2 detected samples
+        t4dPos <- nrow(subset(statsData, Tier4d == input$t4dD))
+        
+        # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+        t4dPR <- round((t4dPos/t2cPos * 100), 2)
+        
+        t4dTable<- data.frame("SamplesTested" = (t4dTested),
+                              "Detected" = (t4dPos),
+                              "PostiveRate" = (t4dPR),
+                              row.names = c("Tier 4d"))
+        
+        return(t4dTable)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        cat("T4d column does not exist\n");
+        
+        t4dTable<- data.frame("SamplesTested" = ("NA"),
+                              "Detected" = ("NA"),
+                              "PostiveRate" = (0),
+                              row.names = c("Tier 4d"))
+        
+        return(t4dTable)
+      }
+      
+    })
+    
+    
+    
+    finalTierTable <- try(rbind(tier1and2Rows, tier2bRow(), tier2cRow(), tier2dRow(),
+                                tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
+    
+    if(any(finalTierTable=="NA")) {
+      
+      revisedTable <- subset(finalTierTable, SamplesTested != "NA")
+      return(revisedTable)
+    
+    } else {
+      
+        return(finalTierTable)
+      
+      }
+      
+    
     
    }, options = list(dom = 't', ordering = FALSE)
   ) 
