@@ -795,6 +795,47 @@ server <- function(input, output, session){
     
     
     
+    tier2dRow <- try(if("Tier2d" %in% colnames(statsData)) {
+      
+      rowFunc <- function() {
+        
+        cat("T2d exists\n");
+        
+        # num of Tier 2 samples tested
+        t2dTested <- nrow(subset(statsData, Tier2d == input$t2dD | Tier2d == input$t2dND))
+        
+        # num of Tier 2 detected samples
+        t2dPos <- nrow(subset(statsData, Tier2d == input$t2dD))
+        
+        # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+        t2dPR <- round((t2dPos/t2aPos * 100), 2)
+        
+        t2dTable<- data.frame("SamplesTested" = (t2dTested),
+                              "Detected" = (t2dPos),
+                              "PostiveRate" = (t2dPR),
+                              row.names = c("Tier 2d"))
+        
+        return(t2dTable)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        cat("T2d column does not exist\n");
+        
+        t2dTable<- data.frame("SamplesTested" = ("NA"),
+                              "Detected" = ("NA"),
+                              "PostiveRate" = (0),
+                              row.names = c("Tier 2d"))
+        
+        return(t2dTable)
+      }
+      
+    })
+    
+    
+    
     tier4aRow <- try(if("Tier4" %in% colnames(statsData)) {
       
       rowFunc <- function() {
