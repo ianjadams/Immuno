@@ -931,7 +931,7 @@ server <- function(input, output, session){
         t4cPos <- nrow(subset(statsData, Tier4c == input$t4cD))
         
         # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
-        t4cPR <- round((t4cPos/tier2bRow()$t2bPos * 100), 2)
+        t4cPR <- round((t4cPos/tier2bRow()$Detected * 100), 2)
         
         t4cTable<- data.frame("SamplesTested" = (t4cTested),
                               "Detected" = (t4cPos),
@@ -972,7 +972,7 @@ server <- function(input, output, session){
         t4dPos <- nrow(subset(statsData, Tier4d == input$t4dD))
         
         # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
-        t4dPR <- round((t4dPos/t2cPos * 100), 2)
+        t4dPR <- round((t4dPos/tier2cRow()$Detected * 100), 2)
         
         t4dTable<- data.frame("SamplesTested" = (t4dTested),
                               "Detected" = (t4dPos),
@@ -1003,17 +1003,9 @@ server <- function(input, output, session){
     finalTierTable <- try(rbind(tier1and2Rows, tier2bRow(), tier2cRow(), tier2dRow(),
                                 tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
     
-    if(any(finalTierTable=="NA")) {
       
-      revisedTable <- subset(finalTierTable, SamplesTested != "NA")
-      return(revisedTable)
-    
-    } else {
-      
-        return(finalTierTable)
-      
-      }
-      
+    subset(finalTierTable, SamplesTested != "NA")
+
     
     
    }, options = list(dom = 't', ordering = FALSE)
