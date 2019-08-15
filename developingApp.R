@@ -696,8 +696,7 @@ server <- function(input, output, session){
     t1Pos <- nrow(subset(statsData, Tier1 == input$t1D))
     
     # putative positive rate (num of Tier 1 detected samples / total samples)
-    putPR <- (t1Pos/allSamples) * 100
-    putPR <- round(putPR, 2)
+    putPR <- round((t1Pos/allSamples * 100), 2)
     
     # num of Tier 2 samples tested
     t2aTested <- nrow(subset(statsData, Tier2 == input$t2aD | Tier2 == input$t2aND))
@@ -706,9 +705,7 @@ server <- function(input, output, session){
     t2aPos <- nrow(subset(statsData, Tier2 == input$t2aD))
     
     # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
-    conPR <- (t2aPos/t1Pos) * 100
-    conPR <- round(conPR, 2)
-    
+    conPR <- round((t2aPos/t1Pos* 100), 2)
     
     #rows for Tier 1 and Tier 2
     tier1and2Rows <- data.frame("SamplesTested" = c(allSamples, t2aTested),
@@ -730,7 +727,7 @@ server <- function(input, output, session){
         # num of Tier 2b detected samples
         t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
         
-        # confirmed positive rate (num of Tier 2b detected samples / num of Tier 2 detected samples)
+        # Tier 2b positive rate (num of Tier 2b detected samples / num of Tier 2 detected samples)
         t2bPR <- round((t2bPos/t2aPos * 100), 2)
         
         #row for Tier 2b
@@ -767,13 +764,13 @@ server <- function(input, output, session){
         
         cat("T2c exists\n");
         
-        # num of Tier 2 samples tested
+        # num of Tier 2c samples tested
         t2cTested <- nrow(subset(statsData, Tier2c == input$t2cD | Tier2c == input$t2cND))
         
-        # num of Tier 2 detected samples
+        # num of Tier 2c detected samples
         t2cPos <- nrow(subset(statsData, Tier2c == input$t2cD))
         
-        # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+        # Tier 2c positive rate (num of Tier 2c detected samples / num of Tier 2 detected samples)
         t2cPR <- round((t2cPos/t2aPos * 100), 2)
         
         #row for Tier 2c
@@ -810,13 +807,13 @@ server <- function(input, output, session){
         
         cat("T2d exists\n");
         
-        # num of Tier 2 samples tested
+        # num of Tier 2d samples tested
         t2dTested <- nrow(subset(statsData, Tier2d == input$t2dD | Tier2d == input$t2dND))
         
-        # num of Tier 2 detected samples
+        # num of Tier 2d detected samples
         t2dPos <- nrow(subset(statsData, Tier2d == input$t2dD))
         
-        # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+        # Tier 2d positive rate (num of Tier 2d detected samples / num of Tier 2 detected samples)
         t2dPR <- round((t2dPos/t2aPos * 100), 2)
         
         #row for Tier 2d
@@ -853,13 +850,13 @@ server <- function(input, output, session){
         
         cat("T4 exists\n");
         
-        # num of Tier 2 samples tested
+        # num of Tier 4 samples tested
         t4aTested <- nrow(subset(statsData, Tier4 == input$t4aD | Tier4 == input$t4aND))
         
-        # num of Tier 2 detected samples
+        # num of Tier 4 detected samples
         t4aPos <- nrow(subset(statsData, Tier4 == input$t4aD))
         
-        # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+        # Tier 4 positive rate (num of Tier 4 detected samples / num of Tier 2 detected samples)
         t4aPR <- round((t4aPos/t2aPos * 100), 2)
         
         #row for Tier 4
@@ -896,13 +893,13 @@ server <- function(input, output, session){
         
         cat("T4b exists\n");
         
-        # num of Tier 2 samples tested
+        # num of Tier 4b samples tested
         t4bTested <- nrow(subset(statsData, Tier4b == input$t4bD | Tier4b == input$t4bND))
         
-        # num of Tier 2 detected samples
+        # num of Tier 4b detected samples
         t4bPos <- nrow(subset(statsData, Tier4b == input$t4bD))
         
-        # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+        # Tier 4b positive rate (num of Tier 4b detected samples / num of Tier 2 detected samples)
         t4bPR <- round((t4bPos/t2aPos * 100), 2)
         
         #row for Tier 4b
@@ -939,13 +936,13 @@ server <- function(input, output, session){
         
         cat("T4c exists\n");
         
-        # num of Tier 2 samples tested
+        # num of Tier 4c samples tested
         t4cTested <- nrow(subset(statsData, Tier4c == input$t4cD | Tier4c == input$t4cND))
         
-        # num of Tier 2 detected samples
+        # num of Tier 4c detected samples
         t4cPos <- nrow(subset(statsData, Tier4c == input$t4cD))
         
-        # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+        # Tier 4c positive rate (num of Tier 4c detected samples / num of Tier 2b detected samples)
         t4cPR <- round((t4cPos/tier2bRow()$Detected * 100), 2)
         
         #row for Tier 4c
@@ -982,13 +979,13 @@ server <- function(input, output, session){
         
         cat("T4d exists\n");
         
-        # num of Tier 2 samples tested
+        # num of Tier 4d samples tested
         t4dTested <- nrow(subset(statsData, Tier4d == input$t4dD | Tier4d == input$t4dND))
         
-        # num of Tier 2 detected samples
+        # num of Tier 4d detected samples
         t4dPos <- nrow(subset(statsData, Tier4d == input$t4dD))
         
-        # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
+        # Tier 4d positive rate (num of Tier 4d detected samples / num of Tier 2c detected samples)
         t4dPR <- round((t4dPos/tier2cRow()$Detected * 100), 2)
         
         #row for Tier 4d
