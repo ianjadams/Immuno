@@ -623,19 +623,29 @@ server <- function(input, output, session){
   
   
   
-  #begin list of "Premises" output field
+  #begin list of "Premises" frequency table
   output$premises <- renderTable({
     
     errorTable <- flagFunc()
     
+    #frequency table
     countError <- as.data.frame(table(errorTable$Premise))
     names(countError) <- c("Premise", "Count")
     countError <- countError[with(countError,order(-Count)), ]
     
+    if(!("Count" %in% colnames(countError))) {
+      
+      noCountError <- data.frame("Premise" = ("NA"),
+                               "Count" = (0),
+                               row.names = c("No Errors"))
+      return(noCountError)
+      
+    }
+    
     return(countError)
     
   })
-  #end list of "Premises" output field
+  #end list of "Premises" frequency table
   
   
   
