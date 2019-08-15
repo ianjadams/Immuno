@@ -1158,9 +1158,20 @@ server <- function(input, output, session){
   
   output$help <- renderUI({
     
-    HTML( 
+    HTML(
       
-      '<h4>List of all possible QC flags are included below:</h4>',
+      '<h3>Data formatting and preprocessing</h3>',
+      '<br />',
+      
+        '<p>Below is the precise phrasing for column headers. These columns are required.</p>',
+        '<p>Subject | Visit | Tier1 | Tier2 | Tier3 |</p>',
+        '<br />',
+        '<p>Datasets with additional tier columns are not required, but must also have precise phrasing.</p>',
+        '<p>Tier2b | Tier2c | Tier2d | Tier4 | Tier4b | Tier4c | Tier4d |</p>',
+      
+      '<br />',
+      
+      '<h3>List of all possible QC flags:</h3>',
       '<br />',
       
         '<ol>',
@@ -1218,12 +1229,12 @@ server <- function(input, output, session){
       
       '<br />',
       
-        '<h4>Premises for summary statistics are included below:</h4>',
+        '<h3>Flow of summary statistics:</h3>',
         '<br />',
       
           '<ol>',
           
-            '<li><b>SamplesTested</b> is sum of user-entered Detected & Not Detected values in each Tier</li>',
+            '<li><b>SamplesTested</b> is sum of user-entered Detected and Not Detected values in each Tier</li>',
             '<li><b>Detected</b> is sum of user-entered Detected values in each Tier</li>',
             '<li><b>PositiveRate</b> is # of <b>Detected</b> / # of <b>SamplesTested</b></li>',
             '<li><b>Evaluable Subjects</b> are those that have Baseline visit and at least 1 follow-up visit</li>',
@@ -1235,7 +1246,9 @@ server <- function(input, output, session){
             '<li><b>Total Unique Subjects</b> is sum of <b>Evaluable</b> and <b>Unevaluated</b> subjects in the study</li>',
             '<li><b>Highest Titer</b> is the maximum Post-Baseline titer in the study</li>',
       
-          '</ol>'
+          '</ol>',
+      
+      '<br />'
           
           )
     
