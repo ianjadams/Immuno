@@ -101,7 +101,8 @@ ui<- shinyUI(fluidPage(
                   tabPanel("Table", varSelectInput("col", "Reorganize Visit Codes:", character(0), multiple = TRUE),
                            DT::dataTableOutput('contents')),
                   tabPanel("Flags", DT::dataTableOutput('flag'),
-                           verbatimTextOutput('premises')),
+                           br(),
+                           tableOutput('premises')),
                   tabPanel("Plot", plotOutput('plot'),
                            verbatimTextOutput('sampleSize')),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
@@ -623,13 +624,15 @@ server <- function(input, output, session){
   
   
   #begin list of "Premises" output field
-  output$premises <- renderText({
+  output$premises <- renderTable({
     
     errorTable <- flagFunc()
     
-    listErrors <- distinct(errorTable, Premise)
+    countError <- as.data.frame(table(errorTable$Premise))
+    names(countError) <- c("Premise", "Count")
+    countError <- countError[with(countError,order(-Count)), ]
     
-    paste(nrow(listErrors), "unique QC checks appear in the table:", listErrors)
+    return(countError)
     
   })
   #end list of "Premises" output field
@@ -1171,7 +1174,7 @@ server <- function(input, output, session){
       
       '<br />',
       
-      '<h3>List of all possible QC flags:</h3>',
+      '<h3>List of all possible QC flags</h3>',
       '<br />',
       
         '<ol>',
@@ -1229,7 +1232,7 @@ server <- function(input, output, session){
       
       '<br />',
       
-        '<h3>Flow of summary statistics:</h3>',
+        '<h3>Flow of summary statistics</h3>',
         '<br />',
       
           '<ol>',
