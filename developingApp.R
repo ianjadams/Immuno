@@ -451,7 +451,7 @@ server <- function(input, output, session){
     
     QC8 <- try(if("Tier4" %in% colnames(allFlags)) {
       
-      subset(allFlags, Tier2 == input$t2aD & Tier4 == is.na(Tier4))
+      subset(allFlags, Tier2 == input$t2aD & is.na(Tier4))
       
     })
     
@@ -630,19 +630,19 @@ server <- function(input, output, session){
     
     #frequency table
     countError <- as.data.frame(table(errorTable$Premise))
-    names(countError) <- c("Premise", "Count")
-    countError <- countError[with(countError,order(-Count)), ]
     
-    if(!("Count" %in% colnames(countError))) {
+    if(nrow(countError) >= 1) {
       
-      noCountError <- data.frame("Premise" = ("NA"),
-                               "Count" = (0),
-                               row.names = c("No Errors"))
+      names(countError) <- c("Premise", "Count")
+      countError <- countError[with(countError, order(-Count)), ]
+      return(countError)
+      
+    } else if(nrow(countError) == 0) {
+      
+      noCountError <- data.frame("Premise" = ("No errors found"),
+                                 "Count" = (0))
       return(noCountError)
-      
     }
-    
-    return(countError)
     
   })
   #end list of "Premises" frequency table
@@ -718,7 +718,7 @@ server <- function(input, output, session){
     t2aPos <- nrow(subset(statsData, Tier2 == input$t2aD))
     
     # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
-    conPR <- round((t2aPos/t1Pos* 100), 2)
+    conPR <- round((t2aPos/t2aTested* 100), 2)
     
     #rows for Tier 1 and Tier 2
     tier1and2Rows <- data.frame("SamplesTested" = c(allSamples, t2aTested),
@@ -741,7 +741,7 @@ server <- function(input, output, session){
         t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
         
         # Tier 2b positive rate (num of Tier 2b detected samples / num of Tier 2 detected samples)
-        t2bPR <- round((t2bPos/t2aPos * 100), 2)
+        t2bPR <- round((t2bPos/t2bTested * 100), 2)
         
         #row for Tier 2b
         t2bTable<- data.frame("SamplesTested" = (t2bTested),
@@ -784,7 +784,7 @@ server <- function(input, output, session){
         t2cPos <- nrow(subset(statsData, Tier2c == input$t2cD))
         
         # Tier 2c positive rate (num of Tier 2c detected samples / num of Tier 2 detected samples)
-        t2cPR <- round((t2cPos/t2aPos * 100), 2)
+        t2cPR <- round((t2cPos/t2cTested * 100), 2)
         
         #row for Tier 2c
         t2cTable<- data.frame("SamplesTested" = (t2cTested),
@@ -827,7 +827,7 @@ server <- function(input, output, session){
         t2dPos <- nrow(subset(statsData, Tier2d == input$t2dD))
         
         # Tier 2d positive rate (num of Tier 2d detected samples / num of Tier 2 detected samples)
-        t2dPR <- round((t2dPos/t2aPos * 100), 2)
+        t2dPR <- round((t2dPos/t2dTested * 100), 2)
         
         #row for Tier 2d
         t2dTable<- data.frame("SamplesTested" = (t2dTested),
@@ -870,7 +870,7 @@ server <- function(input, output, session){
         t4aPos <- nrow(subset(statsData, Tier4 == input$t4aD))
         
         # Tier 4 positive rate (num of Tier 4 detected samples / num of Tier 2 detected samples)
-        t4aPR <- round((t4aPos/t2aPos * 100), 2)
+        t4aPR <- round((t4aPos/t4aTested * 100), 2)
         
         #row for Tier 4
         t4aTable<- data.frame("SamplesTested" = (t4aTested),
@@ -913,7 +913,7 @@ server <- function(input, output, session){
         t4bPos <- nrow(subset(statsData, Tier4b == input$t4bD))
         
         # Tier 4b positive rate (num of Tier 4b detected samples / num of Tier 2 detected samples)
-        t4bPR <- round((t4bPos/t2aPos * 100), 2)
+        t4bPR <- round((t4bPos/t4bTested * 100), 2)
         
         #row for Tier 4b
         t4bTable<- data.frame("SamplesTested" = (t4bTested),
@@ -956,7 +956,7 @@ server <- function(input, output, session){
         t4cPos <- nrow(subset(statsData, Tier4c == input$t4cD))
         
         # Tier 4c positive rate (num of Tier 4c detected samples / num of Tier 2b detected samples)
-        t4cPR <- round((t4cPos/tier2bRow()$Detected * 100), 2)
+        t4cPR <- round((t4cPos/t4cTested * 100), 2)
         
         #row for Tier 4c
         t4cTable<- data.frame("SamplesTested" = (t4cTested),
@@ -999,7 +999,7 @@ server <- function(input, output, session){
         t4dPos <- nrow(subset(statsData, Tier4d == input$t4dD))
         
         # Tier 4d positive rate (num of Tier 4d detected samples / num of Tier 2c detected samples)
-        t4dPR <- round((t4dPos/tier2cRow()$Detected * 100), 2)
+        t4dPR <- round((t4dPos/t4dTested * 100), 2)
         
         #row for Tier 4d
         t4dTable<- data.frame("SamplesTested" = (t4dTested),
@@ -1249,8 +1249,8 @@ server <- function(input, output, session){
           
             '<li><b>SamplesTested</b> is sum of user-entered Detected and Not Detected values in each Tier</li>',
             '<li><b>Detected</b> is sum of user-entered Detected values in each Tier</li>',
-            '<li><b>PositiveRate</b> is # of <b>Detected</b> / # of <b>SamplesTested</b></li>',
-            '<li><b>Evaluable Subjects</b> are those that have Baseline visit and at least 1 follow-up visit</li>',
+            '<li><b>PositiveRate</b> is # of <b>Detected</b> / # of <b>SamplesTested in each Tier</b></li>',
+            '<li><b>Evaluable Subjects</b> are those that have a Baseline visit and at least 1 follow-up visit</li>',
             '<li><b>Unevaluated Subjects</b> are those that either:</li>',
               '<ul>',
                 '<li>missed Baseline</li>',
