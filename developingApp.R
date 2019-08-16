@@ -18,9 +18,32 @@ ui<- shinyUI(fluidPage(
   tags$head(
     tags$style(HTML("
     
-      #downloadData, #fileInput {
-        background-color: #18bc9c;
+      .btn {
+          background-color: #18bc9c;
+          border-radius: 4px;
       }
+      
+      .btn:hover {
+        background-color: #30857c;
+      }
+      
+      .progress-bar {
+        background-color: #2c3e50;
+      }
+      
+      pre {
+        background-color: #cae0e5;
+        font-family: Helvetica;
+      }
+      
+      #format, #flags, #summary {
+        border: 1px solid #337ab7;
+        border-radius: 20px;
+        padding: 10px;
+        margin: 15px;
+      }
+      
+      
 
     "))
   ),
@@ -367,6 +390,7 @@ server <- function(input, output, session){
     toggle("t2bD", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
     toggle("t2bND", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
     toggle("checkT2C", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
+    # toggle("checkT2C", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
   })
   
   
@@ -1173,6 +1197,8 @@ server <- function(input, output, session){
     
     HTML(
       
+      '<div id = format>',
+      
       '<h3>Data formatting and preprocessing</h3>',
       '<br />',
       
@@ -1182,7 +1208,9 @@ server <- function(input, output, session){
         '<p>Datasets with additional tier columns are not required, but must also have precise phrasing.</p>',
         '<p>Tier2b | Tier2c | Tier2d | Tier4 | Tier4b | Tier4c | Tier4d |</p>',
       
-      '<br />',
+      '</div>',
+      
+      '<div id = flags>',
       
       '<h3>List of all possible QC flags</h3>',
       '<br />',
@@ -1240,7 +1268,9 @@ server <- function(input, output, session){
       
         '</ol>',
       
-      '<br />',
+      '</div>',
+      
+      '<div id = summary>',
       
         '<h3>Flow of summary statistics</h3>',
         '<br />',
@@ -1260,6 +1290,8 @@ server <- function(input, output, session){
             '<li><b>Highest Titer</b> is the maximum Post-Baseline titer in the study</li>',
       
           '</ol>',
+      
+      '</div>',
       
       '<br />'
           
