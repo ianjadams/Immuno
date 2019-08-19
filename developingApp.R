@@ -390,7 +390,6 @@ server <- function(input, output, session){
     toggle("t2bD", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
     toggle("t2bND", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
     toggle("checkT2C", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
-    # toggle("checkT2C", condition = input$checkT2B, anim = TRUE, time = 0.5, animType = "slide")
   })
   
   
