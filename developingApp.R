@@ -49,7 +49,9 @@ ui<- shinyUI(fluidPage(
   ),
   
   useShinyjs(),
-  titlePanel("LEM's Immuno Analysis Now for Vendor Data"),
+  headerPanel(title = ("LEM's Immuno Analysis Now for Vendor Data"),
+              tags$head(tags$link(rel = "icon", type = "image/png", href = "antibody.ico"),
+                        windowTitle = "Immuno_Analysis_Now")),
   sidebarLayout(
     sidebarPanel(
       fileInput("file1", 'Load a dataset:',
@@ -897,9 +899,9 @@ server <- function(input, output, session){
         
         #row for Tier 4
         t4aTable<- data.frame("SamplesTested" = (t4aTested),
-                             "Detected" = (t4aPos),
-                             "PostiveRate" = (t4aPR),
-                             row.names = c("Tier 4"))
+                              "Detected" = (t4aPos),
+                              "PostiveRate" = (t4aPR),
+                              row.names = c("Tier 4"))
         
         return(t4aTable)
       }
@@ -912,9 +914,9 @@ server <- function(input, output, session){
         
         #dummy row with NAs
         t4aTable<- data.frame("SamplesTested" = ("NA"),
-                             "Detected" = ("NA"),
-                             "PostiveRate" = (0),
-                             row.names = c("Tier 4"))
+                              "Detected" = ("NA"),
+                              "PostiveRate" = (0),
+                              row.names = c("Tier 4"))
         
         return(t4aTable)
       }
@@ -1057,10 +1059,10 @@ server <- function(input, output, session){
     
     #drop rows that do not have statistics (they do not appear in the dataset)  
     subset(finalTierTable, SamplesTested != "NA")
-
     
     
-   }, options = list(dom = 't', ordering = FALSE)
+    
+  }, options = list(dom = 't', ordering = FALSE)
   ) 
   #end Tier table results
   
@@ -1201,11 +1203,11 @@ server <- function(input, output, session){
       '<h3>Data formatting and preprocessing</h3>',
       '<br />',
       
-        '<p>Below is the precise phrasing for column headers. These columns are required.</p>',
-        '<p>Subject | Visit | Tier1 | Tier2 | Tier3 |</p>',
-        '<br />',
-        '<p>Datasets with additional tier columns are not required, but must also have precise phrasing.</p>',
-        '<p>Tier2b | Tier2c | Tier2d | Tier4 | Tier4b | Tier4c | Tier4d |</p>',
+      '<p>Below is the precise phrasing for column headers. These columns are required.</p>',
+      '<p>Subject | Visit | Tier1 | Tier2 | Tier3 |</p>',
+      '<br />',
+      '<p>Datasets with additional tier columns are not required, but must also have precise phrasing.</p>',
+      '<p>Tier2b | Tier2c | Tier2d | Tier4 | Tier4b | Tier4c | Tier4d |</p>',
       
       '</div>',
       
@@ -1214,87 +1216,87 @@ server <- function(input, output, session){
       '<h3>List of all possible QC flags</h3>',
       '<br />',
       
-        '<ol>',
+      '<ol>',
       
-            '<li><b>T1 Discrepant Value</b></li>',
-              '<ul>',
-                '<li>T1 value is neither of the user-entered values for T1 Detected and T1 Not Detected (this will flag rows such as QNS, CANCEL, PEND, etc.)</li>',
-              '</ul>',
-            '<li><b>T1(+) w/o Result in T2</b></li>',
-              '<ul>',
-                '<li>T1 value is Detected but result in T2 is missing</li>',
-              '</ul>',
-            '<li><b>T1(-) with T2(+)</b></li>',
-              '<ul>',
-                '<li>T1 value is Not Detected but T2 value is Detected</li>',
-              '</ul>',
-            '<li><b>T1(-) with T3(+)</b></li>',
-              '<ul>',
-                '<li>T1 value is Not Detected but T3 value is not 0 (indicating there was a reported titer)</li>',
-              '</ul>',
-            '<li><b>T2 Discrepant Value</b></li>',
-              '<ul>',
-                '<li>T2 value is neither of the user-entered values for T2 Detected and T2 Not Detected (this will flag rows such as QNS, CANCEL, PEND, etc.)</li>',
-              '</ul>',
-            '<li><b>T2(-) with T3(+)</b></li>',
-              '<ul>',
-                '<li>T2 value is Not Detected but T3 value is not 0 (indicating there was a reported titer)</li>',
-              '</ul>',
-            '<li><b>T2(+) with T3(-)</b></li>',
-              '<ul>',
-                '<li>T2 value is Detected but T3 value is 0 (indicating there should be a reported titer, but it might be missing)</li>',
-              '</ul>',
-            '<li><b>T2(+) w/o Result in T4</b></li>',
-              '<ul>',
-                '<li>T2 value is Detected but result in T4 is missing</li>',
-              '</ul>',
-            '<li><b>T2(-) with T4(+)</b></li>',
-              '<ul>',
-                '<li>T2 value is Not Detected but T4 value is Detected</li>',
-              '</ul>',
-            '<li><b>T3 Discrepant Value</b></li>',
-              '<ul>',
-                '<li>Titer value is below MRD or not multiple of MRD</li>',
-              '</ul>',
-            '<li><b>T4 Discrepant Value</b></li>',
-              '<ul>',
-                '<li>T4 value is neither of the user-entered values for T4 Detected and T4 Not Detected (this will flag rows such as QNS, CANCEL, PEND, etc.)</li>',
-              '</ul>',
-            '<li><b>Duplicate Visit for Subject</b></li>',
-              '<ul>',
-                '<li>Subjects who have duplicate instances of the same visit code</li>',
-              '</ul>',
+      '<li><b>T1 Discrepant Value</b></li>',
+      '<ul>',
+      '<li>T1 value is neither of the user-entered values for T1 Detected and T1 Not Detected (this will flag rows such as QNS, CANCEL, PEND, etc.)</li>',
+      '</ul>',
+      '<li><b>T1(+) w/o Result in T2</b></li>',
+      '<ul>',
+      '<li>T1 value is Detected but result in T2 is missing</li>',
+      '</ul>',
+      '<li><b>T1(-) with T2(+)</b></li>',
+      '<ul>',
+      '<li>T1 value is Not Detected but T2 value is Detected</li>',
+      '</ul>',
+      '<li><b>T1(-) with T3(+)</b></li>',
+      '<ul>',
+      '<li>T1 value is Not Detected but T3 value is not 0 (indicating there was a reported titer)</li>',
+      '</ul>',
+      '<li><b>T2 Discrepant Value</b></li>',
+      '<ul>',
+      '<li>T2 value is neither of the user-entered values for T2 Detected and T2 Not Detected (this will flag rows such as QNS, CANCEL, PEND, etc.)</li>',
+      '</ul>',
+      '<li><b>T2(-) with T3(+)</b></li>',
+      '<ul>',
+      '<li>T2 value is Not Detected but T3 value is not 0 (indicating there was a reported titer)</li>',
+      '</ul>',
+      '<li><b>T2(+) with T3(-)</b></li>',
+      '<ul>',
+      '<li>T2 value is Detected but T3 value is 0 (indicating there should be a reported titer, but it might be missing)</li>',
+      '</ul>',
+      '<li><b>T2(+) w/o Result in T4</b></li>',
+      '<ul>',
+      '<li>T2 value is Detected but result in T4 is missing</li>',
+      '</ul>',
+      '<li><b>T2(-) with T4(+)</b></li>',
+      '<ul>',
+      '<li>T2 value is Not Detected but T4 value is Detected</li>',
+      '</ul>',
+      '<li><b>T3 Discrepant Value</b></li>',
+      '<ul>',
+      '<li>Titer value is below MRD or not multiple of MRD</li>',
+      '</ul>',
+      '<li><b>T4 Discrepant Value</b></li>',
+      '<ul>',
+      '<li>T4 value is neither of the user-entered values for T4 Detected and T4 Not Detected (this will flag rows such as QNS, CANCEL, PEND, etc.)</li>',
+      '</ul>',
+      '<li><b>Duplicate Visit for Subject</b></li>',
+      '<ul>',
+      '<li>Subjects who have duplicate instances of the same visit code</li>',
+      '</ul>',
       
-        '</ol>',
+      '</ol>',
       
       '</div>',
       
       '<div id = summary>',
       
-        '<h3>Flow of summary statistics</h3>',
-        '<br />',
+      '<h3>Flow of summary statistics</h3>',
+      '<br />',
       
-          '<ol>',
-          
-            '<li><b>SamplesTested</b> is sum of user-entered Detected and Not Detected values in each Tier</li>',
-            '<li><b>Detected</b> is sum of user-entered Detected values in each Tier</li>',
-            '<li><b>PositiveRate</b> is # of <b>Detected</b> / # of <b>SamplesTested in each Tier</b></li>',
-            '<li><b>Evaluable Subjects</b> are those that have a Baseline visit and at least 1 follow-up visit</li>',
-            '<li><b>Unevaluated Subjects</b> are those that either:</li>',
-              '<ul>',
-                '<li>missed Baseline</li>',
-                '<li>have Baseline visit without any follow-up visits</li>',
-              '</ul>',
-            '<li><b>Total Unique Subjects</b> is sum of <b>Evaluable</b> and <b>Unevaluated</b> subjects in the study</li>',
-            '<li><b>Highest Titer</b> is the maximum Post-Baseline titer in the study</li>',
+      '<ol>',
       
-          '</ol>',
+      '<li><b>SamplesTested</b> is sum of user-entered Detected and Not Detected values in each Tier</li>',
+      '<li><b>Detected</b> is sum of user-entered Detected values in each Tier</li>',
+      '<li><b>PositiveRate</b> is # of <b>Detected</b> / # of <b>SamplesTested in each Tier</b></li>',
+      '<li><b>Evaluable Subjects</b> are those that have a Baseline visit and at least 1 follow-up visit</li>',
+      '<li><b>Unevaluated Subjects</b> are those that either:</li>',
+      '<ul>',
+      '<li>missed Baseline</li>',
+      '<li>have Baseline visit without any follow-up visits</li>',
+      '</ul>',
+      '<li><b>Total Unique Subjects</b> is sum of <b>Evaluable</b> and <b>Unevaluated</b> subjects in the study</li>',
+      '<li><b>Highest Titer</b> is the maximum Post-Baseline titer in the study</li>',
+      
+      '</ol>',
       
       '</div>',
       
       '<br />'
-          
-          )
+      
+    )
     
   })
   

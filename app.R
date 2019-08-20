@@ -49,7 +49,9 @@ ui<- shinyUI(fluidPage(
   ),
   
   useShinyjs(),
-  titlePanel("LEM's Immuno Analysis Now for Vendor Data"),
+  headerPanel(title = ("LEM's Immuno Analysis Now for Vendor Data"),
+              tags$head(tags$link(rel = "icon", type = "image/png", href = "antibody.ico"),
+              windowTitle = "Immuno_Analysis_Now")),
   sidebarLayout(
     sidebarPanel(
       fileInput("file1", 'Load a dataset:',
