@@ -1317,7 +1317,7 @@ server <- function(input, output, session){
     },
     
     content <- function(file) {
-      file.copy("IAN User Guide.pdf", file)
+      file.copy("www/IAN User Guide.pdf", file)
     },
     contentType = "pdf"
   )
