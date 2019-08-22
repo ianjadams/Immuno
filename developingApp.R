@@ -135,7 +135,11 @@ ui<- shinyUI(fluidPage(
                            DT::dataTableOutput('summary2'),
                            br(),
                            DT::dataTableOutput('summary3')),
-                  tabPanel("Help", uiOutput('help'))
+                  tabPanel("Help", uiOutput('help'),
+                           downloadButton("downloadGuide", "Documentation"),
+                           br(),
+                           br())
+                           
       )
     )
   )
@@ -158,9 +162,9 @@ server <- function(input, output, session){
     inFile <- input$file1
     if (is.null(inFile)) return(NULL)
     initialData <- data.frame(read_excel(inFile$datapath))
-    initialData$Tier3 <- ifelse(substring(initialData$Tier3, 1, 2) == "1:", 
+    initialData$Tier3 <- ifelse(substring(initialData$Tier3, 1, 2) == "1:",
                                 as.numeric(as.character(substring(initialData$Tier3, 3))),
-                                as.numeric(as.character(initialData$Tier3)))
+                                initialData$Tier3)
     initialData$Tier3[is.na(initialData$Tier3)] <- 0
     initialData[initialData==input$baselineVisits] <- "Baseline"
     as.data.frame(initialData)
@@ -721,7 +725,6 @@ server <- function(input, output, session){
   
   
   #begin "Summary" tab
-  
   #begin Tier table results
   output$summary1 <- DT::renderDataTable({
     
@@ -1194,6 +1197,9 @@ server <- function(input, output, session){
   #end "Download All Tables" button
   
   
+  
+  #begin "Help" tab
+  #begin help instructions
   output$help <- renderUI({
     
     HTML(
@@ -1296,9 +1302,27 @@ server <- function(input, output, session){
       
       '<br />'
       
+      
+      
     )
     
   })
+  #end help instructions
+  
+  
+  #begin Download documentation button
+  output$downloadGuide <- downloadHandler(
+    filename <- function() {
+      paste("IAN User Guide", "pdf", sep=".")
+    },
+    
+    content <- function(file) {
+      file.copy("IAN User Guide.pdf", file)
+    },
+    contentType = "pdf"
+  )
+  #end Download documentation button
+  #end "Help" tab
   
   
   
