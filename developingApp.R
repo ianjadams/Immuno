@@ -164,7 +164,7 @@ server <- function(input, output, session){
     initialData <- data.frame(read_excel(inFile$datapath))
     initialData$Tier3 <- ifelse(substring(initialData$Tier3, 1, 2) == "1:",
                                 as.numeric(as.character(substring(initialData$Tier3, 3))),
-                                initialData$Tier3)
+                                as.numeric(as.character(initialData$Tier3)))
     initialData$Tier3[is.na(initialData$Tier3)] <- 0
     initialData[initialData==input$baselineVisits] <- "Baseline"
     as.data.frame(initialData)
@@ -751,7 +751,7 @@ server <- function(input, output, session){
     #rows for Tier 1 and Tier 2
     tier1and2Rows <- data.frame("SamplesTested" = c(allSamples, t2aTested),
                                 "Detected" = c(t1Pos, t2aPos),
-                                "PositiveRate(%)" = c(putPR, conPR),
+                                "PositiveRate" = c(paste(putPR, "%", sep = ""), paste(conPR, "%", sep = "")),
                                 row.names = c("Tier 1", "Tier 2"))
     
     
@@ -774,7 +774,7 @@ server <- function(input, output, session){
         #row for Tier 2b
         t2bTable<- data.frame("SamplesTested" = (t2bTested),
                               "Detected" = (t2bPos),
-                              "PositiveRate(%)" = (t2bPR),
+                              "PositiveRate" = paste(t2bPR, "%", sep = ""),
                               row.names = c("Tier 2b"))
         
         return(t2bTable)
@@ -789,7 +789,7 @@ server <- function(input, output, session){
         #dummy row with NAs
         t2bTable<- data.frame("SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
-                              "PositiveRate(%)" = (0),
+                              "PositiveRate" = (0),
                               row.names = c("Tier 2b"))
         
         return(t2bTable)
@@ -817,7 +817,7 @@ server <- function(input, output, session){
         #row for Tier 2c
         t2cTable<- data.frame("SamplesTested" = (t2cTested),
                               "Detected" = (t2cPos),
-                              "PositiveRate(%)" = (t2cPR),
+                              "PositiveRate" = paste(t2cPR, "%", sep = ""),
                               row.names = c("Tier 2c"))
         
         return(t2cTable)
@@ -832,7 +832,7 @@ server <- function(input, output, session){
         #dummy row with NAs
         t2cTable<- data.frame("SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
-                              "PositiveRate(%)" = (0),
+                              "PositiveRate" = (0),
                               row.names = c("Tier 2c"))
         
         return(t2cTable)
@@ -860,7 +860,7 @@ server <- function(input, output, session){
         #row for Tier 2d
         t2dTable<- data.frame("SamplesTested" = (t2dTested),
                               "Detected" = (t2dPos),
-                              "PositiveRate(%)" = (t2dPR),
+                              "PositiveRate" = paste(t2dPR, "%", sep = ""),
                               row.names = c("Tier 2d"))
         
         return(t2dTable)
@@ -875,7 +875,7 @@ server <- function(input, output, session){
         #dummy row with NAs
         t2dTable<- data.frame("SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
-                              "PositiveRate(%)" = (0),
+                              "PositiveRate" = (0),
                               row.names = c("Tier 2d"))
         
         return(t2dTable)
@@ -903,7 +903,7 @@ server <- function(input, output, session){
         #row for Tier 4
         t4aTable<- data.frame("SamplesTested" = (t4aTested),
                               "Detected" = (t4aPos),
-                              "PositiveRate(%)" = (t4aPR),
+                              "PositiveRate" = paste(t4aPR, "%", sep = ""),
                               row.names = c("Tier 4"))
         
         return(t4aTable)
@@ -918,7 +918,7 @@ server <- function(input, output, session){
         #dummy row with NAs
         t4aTable<- data.frame("SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
-                              "PositiveRate(%)" = (0),
+                              "PositiveRate" = (0),
                               row.names = c("Tier 4"))
         
         return(t4aTable)
@@ -946,7 +946,7 @@ server <- function(input, output, session){
         #row for Tier 4b
         t4bTable<- data.frame("SamplesTested" = (t4bTested),
                               "Detected" = (t4bPos),
-                              "PositiveRate(%)" = (t4bPR),
+                              "PositiveRate" = paste(t4bPR, "%", sep = ""),
                               row.names = c("Tier 4b"))
         
         return(t4bTable)
@@ -961,7 +961,7 @@ server <- function(input, output, session){
         #dummy row with NAs
         t4bTable<- data.frame("SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
-                              "PositiveRate(%)" = (0),
+                              "PositiveRate" = (0),
                               row.names = c("Tier 4b"))
         
         return(t4bTable)
@@ -989,7 +989,7 @@ server <- function(input, output, session){
         #row for Tier 4c
         t4cTable<- data.frame("SamplesTested" = (t4cTested),
                               "Detected" = (t4cPos),
-                              "PositiveRate(%)" = (t4cPR),
+                              "PositiveRate" = paste(t4cPR, "%", sep = ""),
                               row.names = c("Tier 4c"))
         
         return(t4cTable)
@@ -1004,7 +1004,7 @@ server <- function(input, output, session){
         #dummy row with NAs
         t4cTable<- data.frame("SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
-                              "PositiveRate(%)" = (0),
+                              "PositiveRate" = (0),
                               row.names = c("Tier 4c"))
         
         return(t4cTable)
@@ -1032,7 +1032,7 @@ server <- function(input, output, session){
         #row for Tier 4d
         t4dTable<- data.frame("SamplesTested" = (t4dTested),
                               "Detected" = (t4dPos),
-                              "PositiveRate(%)" = (t4dPR),
+                              "PositiveRate" = paste(t4dPR, "%", sep = ""),
                               row.names = c("Tier 4d"))
         
         return(t4dTable)
@@ -1047,7 +1047,7 @@ server <- function(input, output, session){
         #dummy row with NAs
         t4dTable<- data.frame("SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
-                              "PositiveRate(%)" = (0),
+                              "PositiveRate" = (0),
                               row.names = c("Tier 4d"))
         
         return(t4dTable)
@@ -1137,7 +1137,11 @@ server <- function(input, output, session){
     
     # output table for Treatment Emergence results
     data.frame("Count" = c(numEvalSubjects, numBLPosSubjects, numTESubjects, numTISubjects, numTBSubjects),
-               "Rate(%)" = c(baseRate, basePosRate, teRate, tiRate, tbRate),
+               "Rate" = c(paste(baseRate, "%", sep = ""),
+                          paste(basePosRate, "%", sep = ""),
+                          paste(teRate, "%", sep = ""), 
+                          paste(tiRate, "%", sep = ""), 
+                          paste(tbRate, "%", sep = "")),
                row.names = c("Subjects Evaluable for TE ADA", "Evaluable Subs with ADA Present at Baseline",
                              "Subjects TE ADA", "Treatment-Induced", "Treatment-Boosted"))
     
@@ -1203,6 +1207,13 @@ server <- function(input, output, session){
   output$help <- renderUI({
     
     HTML(
+      
+      # '<div id = document>',
+      # 
+      # '<p>Download the full documentation for this tool <a href="www/IAN User Guide.pdf">here</a>',
+      # '</p>',
+      # 
+      # '</div>',
       
       '<div id = format>',
       
@@ -1286,7 +1297,7 @@ server <- function(input, output, session){
       
       '<li><b>SamplesTested</b> is sum of user-entered Detected and Not Detected values in each Tier</li>',
       '<li><b>Detected</b> is sum of user-entered Detected values in each Tier</li>',
-      '<li><b>PositiveRate</b> is # of <b>Detected</b> / # of <b>SamplesTested in each Tier</b></li>',
+      '<li><b>PositiveRate</b> is # of <b>Detected</b> / # of <b>SamplesTested</b> in each Tier</li>',
       '<li><b>Evaluable Subjects</b> are those that have a Baseline visit and at least 1 follow-up visit</li>',
       '<li><b>Unevaluated Subjects</b> are those that either:</li>',
       '<ul>',
