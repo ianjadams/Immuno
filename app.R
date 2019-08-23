@@ -1286,7 +1286,7 @@ server <- function(input, output, session){
       
       '<li><b>SamplesTested</b> is sum of user-entered Detected and Not Detected values in each Tier</li>',
       '<li><b>Detected</b> is sum of user-entered Detected values in each Tier</li>',
-      '<li><b>PositiveRate(%)(%)</b> is # of <b>Detected</b> / # of <b>SamplesTested in each Tier</b></li>',
+      '<li><b>PositiveRate</b> is # of <b>Detected</b> / # of <b>SamplesTested in each Tier</b></li>',
       '<li><b>Evaluable Subjects</b> are those that have a Baseline visit and at least 1 follow-up visit</li>',
       '<li><b>Unevaluated Subjects</b> are those that either:</li>',
       '<ul>',
