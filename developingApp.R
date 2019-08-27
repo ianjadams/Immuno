@@ -109,9 +109,10 @@ ui<- shinyUI(fluidPage(
                               "Baselines" = "baseline",
                               "Baseline Positives" = "bp",
                               "Unevaluated Subjects" = "uneval",
+                              list("Shift Tables" = c(
                               "Subject Pivot Table" = "subjects",
                               "Treatment Emergent Pivot Table" = "te",
-                              "Titer Pivot Table" = "titercounts"),
+                              "Titer Pivot Table" = "titercounts"))),
                   selected = "original"),
       
       
@@ -135,8 +136,8 @@ ui<- shinyUI(fluidPage(
                            DT::dataTableOutput('summary2'),
                            br(),
                            DT::dataTableOutput('summary3')),
-                  tabPanel("Help", uiOutput('help'),
-                           downloadButton("downloadGuide", "Documentation"),
+                  tabPanel("Help", downloadButton("downloadGuide", "Documentation"),
+                           uiOutput('help'),
                            br(),
                            br())
                   
@@ -496,13 +497,103 @@ server <- function(input, output, session){
     #tier4
     QC11 <- try(if("Tier4" %in% colnames(allFlags)) {
       
-      subset(allFlags, Tier4 != input$t4aD & Tier4 != input$t4aND)
+      subset(allFlags, Tier4 != input$t4aD & Tier4 != input$t4aND & Tier4 != "N/A" & Tier4 != "NA")
       
     })
     
     #duplicate visits
     QC12 <- allFlags[duplicated(allFlags[, c("Subject", "Visit")]), ]
     
+    #multiple tier 2 columns
+    QC13 <- try(if("Tier2b" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2b != input$t2bD & Tier2b != input$t2bND)
+      
+    })
+    
+    QC14 <- try(if("Tier2b" %in% colnames(allFlags)) {
+        
+      subset(allFlags, Tier2 == input$t2aD & is.na(Tier2b))
+      
+    })
+    
+    QC15 <- try(if("Tier2c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2c != input$t2cD & Tier2c != input$t2cND)
+      
+    })
+    
+    QC16 <- try(if("Tier2c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aD & is.na(Tier2c))
+      
+    })
+    
+    QC17 <- try(if("Tier4b" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aD & is.na(Tier4b))
+      
+    })
+    
+    QC18 <- try(if("Tier2b" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aND & Tier2b == input$t2bD)
+      
+    })
+    
+    QC19 <- try(if("Tier2c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aND & Tier2c == input$t2cD)
+      
+    })
+    
+    QC20 <- try(if("Tier4b" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aND & Tier4b == input$t4bD)
+      
+    })
+    
+    QC21 <- try(if("Tier4b" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier4b != input$t4bD & Tier4b != input$t4bND)
+      
+    })
+    
+    QC22 <- try(if("Tier4c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier4c != input$t4cD & Tier4c != input$t4cND)
+      
+    })
+    
+    QC23 <- try(if("Tier4c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2b == input$t2bD & is.na(Tier4c))
+      
+    })
+    
+    QC24 <- try(if("Tier4c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2b == input$t2bND & Tier4c == input$t4cD)
+      
+    })
+    
+    QC25 <- try(if("Tier4d" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier4d != input$t4dD & Tier4d != input$t4dND)
+      
+    })
+    
+    QC26 <- try(if("Tier4d" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2c == input$t2cD & is.na(Tier4d))
+      
+    })
+    
+    QC27 <- try(if("Tier4d" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2c == input$t2cND & Tier4d == input$t4dD)
+      
+    })
     #end logical QC checks
     
     
@@ -1203,6 +1294,22 @@ server <- function(input, output, session){
   
   
   #begin "Help" tab
+  #begin Download documentation button
+  output$downloadGuide <- downloadHandler(
+    
+    filename <- function() {
+      paste("IAN User Guide", "pdf", sep=".")
+    },
+    
+    content <- function(file) {
+      file.copy("www/IAN User Guide.pdf", file)
+    },
+    contentType = "pdf"
+  )
+  #end Download documentation button
+  
+  
+  
   #begin help instructions
   output$help <- renderUI({
     
@@ -1319,20 +1426,6 @@ server <- function(input, output, session){
     
   })
   #end help instructions
-  
-  
-  #begin Download documentation button
-  output$downloadGuide <- downloadHandler(
-    filename <- function() {
-      paste("IAN User Guide", "pdf", sep=".")
-    },
-    
-    content <- function(file) {
-      file.copy("www/IAN User Guide.pdf", file)
-    },
-    contentType = "pdf"
-  )
-  #end Download documentation button
   #end "Help" tab
   
   
