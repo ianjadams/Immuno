@@ -507,7 +507,7 @@ server <- function(input, output, session){
     #multiple tier 2 columns
     QC13 <- try(if("Tier2b" %in% colnames(allFlags)) {
       
-      subset(allFlags, Tier2b != input$t2bD & Tier2b != input$t2bND)
+      subset(allFlags, Tier2b != input$t2bD & Tier2b != input$t2bND & Tier2b != "N/A" & Tier2b != "NA")
       
     })
     
@@ -519,7 +519,7 @@ server <- function(input, output, session){
     
     QC15 <- try(if("Tier2c" %in% colnames(allFlags)) {
       
-      subset(allFlags, Tier2c != input$t2cD & Tier2c != input$t2cND)
+      subset(allFlags, Tier2c != input$t2cD & Tier2c != input$t2cND & Tier2c != "N/A" & Tier2c != "NA")
       
     })
     
@@ -555,13 +555,13 @@ server <- function(input, output, session){
     
     QC21 <- try(if("Tier4b" %in% colnames(allFlags)) {
       
-      subset(allFlags, Tier4b != input$t4bD & Tier4b != input$t4bND)
+      subset(allFlags, Tier4b != input$t4bD & Tier4b != input$t4bND & Tier4b != "N/A" & Tier4b != "NA")
       
     })
     
     QC22 <- try(if("Tier4c" %in% colnames(allFlags)) {
       
-      subset(allFlags, Tier4c != input$t4cD & Tier4c != input$t4cND)
+      subset(allFlags, Tier4c != input$t4cD & Tier4c != input$t4cND & Tier4c!= "N/A" & Tier4c != "NA")
       
     })
     
@@ -579,7 +579,7 @@ server <- function(input, output, session){
     
     QC25 <- try(if("Tier4d" %in% colnames(allFlags)) {
       
-      subset(allFlags, Tier4d != input$t4dD & Tier4d != input$t4dND)
+      subset(allFlags, Tier4d != input$t4dD & Tier4d != input$t4dND & Tier4d != "N/A" & Tier4d != "NA")
       
     })
     
@@ -696,7 +696,7 @@ server <- function(input, output, session){
     }, silent = TRUE)
     
     try(if(QC25$Premise == "exp") {
-      QC23$Premise <- "T4d Discrepant Value"
+      QC25$Premise <- "T4d Discrepant Value"
     }, silent = TRUE)
     
     try(if(QC26$Premise == "exp") {
@@ -711,7 +711,7 @@ server <- function(input, output, session){
     
     #combine all rows that have any of the errors above
     errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9, QC10, QC11, QC12, QC13, QC14,
-                            QC15, QC16, QC17, QC18, QC19, QC20, QC21, QC22, QC23, QC24, QC25, QC26, QC272))
+                            QC15, QC16, QC17, QC18, QC19, QC20, QC21, QC22, QC23, QC24, QC25, QC26, QC27))
     return(errorTable)
     
   }
