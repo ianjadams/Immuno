@@ -647,10 +647,71 @@ server <- function(input, output, session){
       QC12$Premise <- "Duplicate Visit for Subject"
     }, silent = TRUE)
     
+    try(if(QC13$Premise == "exp") {
+      QC13$Premise <- "T2b Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC14$Premise == "exp") {
+      QC14$Premise <- "T2(+) w/o Result in T2b"
+    }, silent = TRUE)
+    
+    try(if(QC15$Premise == "exp") {
+      QC15$Premise <- "T2c Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC16$Premise == "exp") {
+      QC16$Premise <- "T2(+) w/o Result in T2c"
+    }, silent = TRUE)
+    
+    try(if(QC17$Premise == "exp") {
+      QC17$Premise <- "T2(+) w/o Result in T4b"
+    }, silent = TRUE)
+    
+    try(if(QC18$Premise == "exp") {
+      QC18$Premise <- "T2(-) with T2b(+)"
+    }, silent = TRUE)
+    
+    try(if(QC19$Premise == "exp") {
+      QC19$Premise <- "T2(-) with T2c(+)"
+    }, silent = TRUE)
+    
+    try(if(QC20$Premise == "exp") {
+      QC20$Premise <- "T2(-) with T4b(+)"
+    }, silent = TRUE)
+    
+    try(if(QC21$Premise == "exp") {
+      QC21$Premise <- "T4b Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC22$Premise == "exp") {
+      QC22$Premise <- "T4c Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC23$Premise == "exp") {
+      QC23$Premise <- "T2b(+) w/o Result in T4c"
+    }, silent = TRUE)
+    
+    try(if(QC24$Premise == "exp") {
+      QC24$Premise <- "T2b(-) with T4c(+)"
+    }, silent = TRUE)
+    
+    try(if(QC25$Premise == "exp") {
+      QC23$Premise <- "T4d Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC26$Premise == "exp") {
+      QC26$Premise <- "T2c(+) w/o Result in T4d"
+    }, silent = TRUE)
+    
+    try(if(QC27$Premise == "exp") {
+      QC27$Premise <- "T2c(-) with T4d(+)"
+    }, silent = TRUE)
+    
     
     
     #combine all rows that have any of the errors above
-    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9, QC10, QC11, QC12))
+    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9, QC10, QC11, QC12, QC13, QC14,
+                            QC15, QC16, QC17, QC18, QC19, QC20, QC21, QC22, QC23, QC24, QC25, QC26, QC272))
     return(errorTable)
     
   }
