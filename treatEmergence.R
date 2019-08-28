@@ -338,3 +338,28 @@ try(if("Tier4" %in% colnames(rawData)) {
 finalTierTable <- try(rbind(tier1_2a_DataTable, tier2bDataTable, tier2cDataTable, tier2dDataTable))
 
 
+
+###########################
+#SUBJECTS WITH TITER SWINGS
+###########################
+
+
+
+#get all unique treatment emergent subjects
+teSubjects <- distinct(emerTable, Subject)
+
+#join TE subjects with original data to show just TE subject visits
+df <- left_join(teSubjects, rawData, by = "Subject")
+
+#find rows that have increases or decreases in titer by x fold
+df$JumpUp <- c(0L, df$Tier3[-1] > 16* df$Tier3[-nrow(df)] & df$Tier3[-1] >= 4*mrd)
+df$JumpDown <- c(0L, df$Tier3[-1] < 1/16* df$Tier3[-nrow(df)] & df$Tier3[-nrow(df)] >= 4*mrd)
+
+#drop baseline visits from the table
+#this is to "reset" the titer jump calculation for a new subject
+postBLJump <- subset(df, (JumpUp == 1 | JumpDown == 1) & Visit != "Baseline")
+
+#show list of subjects who have jumps in titer by x fold
+titerSwingSubs <- distinct(postBLJump, Subject)
+
+
