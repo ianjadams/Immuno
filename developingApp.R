@@ -144,7 +144,7 @@ ui<- shinyUI(fluidPage(
       )
     )
   )
-)
+ )
 )
 #end Shiny UI interface
 
@@ -882,29 +882,89 @@ server <- function(input, output, session){
     
     statsData <- myData()
     
-    # num of samples
-    allSamples <- nrow(subset(statsData, Tier1 == input$t1D | Tier1 == input$t1ND))
+    tier1Row <- try(if("Tier1" %in% colnames(statsData)) {
+      
+      rowFunc <- function() {
+        
+        cat("T1 exists\n");
+        
+        # num of Tier 1 samples tested
+        t1Tested <- nrow(subset(statsData, Tier1 == input$t1D | Tier1 == input$t1ND))
+        
+        # num of Tier 1 detected samples
+        t1Pos <- nrow(subset(statsData, Tier1 == input$t1D))
+        
+        # Tier 1 positive rate
+        t1PR <- round((t1Pos/t1Tested * 100), 2)
+        
+        #row for Tier 1
+        t1Table<- data.frame("SamplesTested" = (t1Tested),
+                              "Detected" = (t1Pos),
+                              "PositiveRate" = paste(t1PR, "%", sep = ""),
+                              row.names = c("Tier 1"))
+        
+        return(t1Table)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        cat("T1 column does not exist\n");
+        
+        #dummy row with NAs
+        t1Table <- data.frame("SamplesTested" = ("NA"),
+                              "Detected" = ("NA"),
+                              "PositiveRate" = (0),
+                              row.names = c("Tier 1"))
+        
+        return(t1Table)
+      }
+      
+    })
     
-    # num of Tier 1 detected samples
-    t1Pos <- nrow(subset(statsData, Tier1 == input$t1D))
     
-    # putative positive rate (num of Tier 1 detected samples / total samples)
-    putPR <- round((t1Pos/allSamples * 100), 2)
     
-    # num of Tier 2 samples tested
-    t2aTested <- nrow(subset(statsData, Tier2 == input$t2aD | Tier2 == input$t2aND))
-    
-    # num of Tier 2 detected samples
-    t2aPos <- nrow(subset(statsData, Tier2 == input$t2aD))
-    
-    # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
-    conPR <- round((t2aPos/t2aTested* 100), 2)
-    
-    #rows for Tier 1 and Tier 2
-    tier1and2Rows <- data.frame("SamplesTested" = c(allSamples, t2aTested),
-                                "Detected" = c(t1Pos, t2aPos),
-                                "PositiveRate" = c(paste(putPR, "%", sep = ""), paste(conPR, "%", sep = "")),
-                                row.names = c("Tier 1", "Tier 2"))
+    tier2aRow <- try(if("Tier2" %in% colnames(statsData)) {
+
+      rowFunc <- function() {
+
+        cat("T2 exists\n");
+        
+        # num of Tier 2 samples tested
+        t2aTested <- nrow(subset(statsData, Tier2 == input$t2aD | Tier2 == input$t2aND))
+        
+        # num of Tier 2 detected samples
+        t2aPos <- nrow(subset(statsData, Tier2 == input$t2aD))
+        
+        # Tier 2 positive rate
+        t2aPR <- round((t2aPos/t2aTested * 100), 2)
+        
+        #row for Tier 2
+        t2aTable<- data.frame("SamplesTested" = (t2aTested),
+                              "Detected" = (t2aPos),
+                              "PositiveRate" = paste(t2aPR, "%", sep = ""),
+                              row.names = c("Tier 2"))
+
+        return(t2aTable)
+      }
+
+    } else {
+
+      noRowFunc <- function() {
+
+        cat("T2 column does not exist\n");
+
+        #dummy row with NAs
+        t2aTable<- data.frame("SamplesTested" = ("NA"),
+                              "Detected" = ("NA"),
+                              "PositiveRate" = (0),
+                              row.names = c("Tier 2"))
+
+        return(t2aTable)
+      }
+
+    })
     
     
     
@@ -920,7 +980,7 @@ server <- function(input, output, session){
         # num of Tier 2b detected samples
         t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
         
-        # Tier 2b positive rate (num of Tier 2b detected samples / num of Tier 2 detected samples)
+        # Tier 2b positive rate
         t2bPR <- round((t2bPos/t2bTested * 100), 2)
         
         #row for Tier 2b
@@ -963,7 +1023,7 @@ server <- function(input, output, session){
         # num of Tier 2c detected samples
         t2cPos <- nrow(subset(statsData, Tier2c == input$t2cD))
         
-        # Tier 2c positive rate (num of Tier 2c detected samples / num of Tier 2 detected samples)
+        # Tier 2c positive rate
         t2cPR <- round((t2cPos/t2cTested * 100), 2)
         
         #row for Tier 2c
@@ -1006,7 +1066,7 @@ server <- function(input, output, session){
         # num of Tier 2d detected samples
         t2dPos <- nrow(subset(statsData, Tier2d == input$t2dD))
         
-        # Tier 2d positive rate (num of Tier 2d detected samples / num of Tier 2 detected samples)
+        # Tier 2d positive rate
         t2dPR <- round((t2dPos/t2dTested * 100), 2)
         
         #row for Tier 2d
@@ -1049,7 +1109,7 @@ server <- function(input, output, session){
         # num of Tier 4 detected samples
         t4aPos <- nrow(subset(statsData, Tier4 == input$t4aD))
         
-        # Tier 4 positive rate (num of Tier 4 detected samples / num of Tier 2 detected samples)
+        # Tier 4 positive rate
         t4aPR <- round((t4aPos/t4aTested * 100), 2)
         
         #row for Tier 4
@@ -1092,7 +1152,7 @@ server <- function(input, output, session){
         # num of Tier 4b detected samples
         t4bPos <- nrow(subset(statsData, Tier4b == input$t4bD))
         
-        # Tier 4b positive rate (num of Tier 4b detected samples / num of Tier 2 detected samples)
+        # Tier 4b positive rate
         t4bPR <- round((t4bPos/t4bTested * 100), 2)
         
         #row for Tier 4b
@@ -1135,7 +1195,7 @@ server <- function(input, output, session){
         # num of Tier 4c detected samples
         t4cPos <- nrow(subset(statsData, Tier4c == input$t4cD))
         
-        # Tier 4c positive rate (num of Tier 4c detected samples / num of Tier 2b detected samples)
+        # Tier 4c positive rate
         t4cPR <- round((t4cPos/t4cTested * 100), 2)
         
         #row for Tier 4c
@@ -1178,7 +1238,7 @@ server <- function(input, output, session){
         # num of Tier 4d detected samples
         t4dPos <- nrow(subset(statsData, Tier4d == input$t4dD))
         
-        # Tier 4d positive rate (num of Tier 4d detected samples / num of Tier 2c detected samples)
+        # Tier 4d positive rate
         t4dPR <- round((t4dPos/t4dTested * 100), 2)
         
         #row for Tier 4d
@@ -1209,11 +1269,23 @@ server <- function(input, output, session){
     
     
     #combine all rows for each Tier
-    finalTierTable <- try(rbind(tier1and2Rows, tier2bRow(), tier2cRow(), tier2dRow(),
-                                tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
+    if("Tier1" %in% colnames(statsData)) {
+      
+      finalTierTable <- try(rbind(tier1Row(), tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
+                                  tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
+      
+      #drop rows that do not have statistics (they do not appear in the dataset)  
+      subset(finalTierTable, SamplesTested != "NA")
     
-    #drop rows that do not have statistics (they do not appear in the dataset)  
-    subset(finalTierTable, SamplesTested != "NA")
+    } else {
+        
+        altFinalTierTable <- try(rbind(tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
+                                       tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
+        
+        #drop rows that do not have statistics (they do not appear in the dataset)  
+        subset(altFinalTierTable, SamplesTested != "NA")
+      
+      }
     
     
     
