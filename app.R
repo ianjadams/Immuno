@@ -109,9 +109,10 @@ ui<- shinyUI(fluidPage(
                               "Baselines" = "baseline",
                               "Baseline Positives" = "bp",
                               "Unevaluated Subjects" = "uneval",
-                              "Subject Pivot Table" = "subjects",
-                              "Treatment Emergent Pivot Table" = "te",
-                              "Titer Pivot Table" = "titercounts"),
+                              list("Shift Tables" = c(
+                                "Subject Pivot Table" = "subjects",
+                                "Treatment Emergent Pivot Table" = "te",
+                                "Titer Pivot Table" = "titercounts"))),
                   selected = "original"),
       
       
@@ -135,8 +136,8 @@ ui<- shinyUI(fluidPage(
                            DT::dataTableOutput('summary2'),
                            br(),
                            DT::dataTableOutput('summary3')),
-                  tabPanel("Help", uiOutput('help'),
-                           downloadButton("downloadGuide", "Documentation"),
+                  tabPanel("Help", downloadButton("downloadGuide", "Documentation"),
+                           uiOutput('help'),
                            br(),
                            br())
                   
@@ -496,13 +497,103 @@ server <- function(input, output, session){
     #tier4
     QC11 <- try(if("Tier4" %in% colnames(allFlags)) {
       
-      subset(allFlags, Tier4 != input$t4aD & Tier4 != input$t4aND)
+      subset(allFlags, Tier4 != input$t4aD & Tier4 != input$t4aND & Tier4 != "N/A" & Tier4 != "NA")
       
     })
     
     #duplicate visits
     QC12 <- allFlags[duplicated(allFlags[, c("Subject", "Visit")]), ]
     
+    #multiple tier 2 columns
+    QC13 <- try(if("Tier2b" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2b != input$t2bD & Tier2b != input$t2bND & Tier2b != "N/A" & Tier2b != "NA")
+      
+    })
+    
+    QC14 <- try(if("Tier2b" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aD & is.na(Tier2b))
+      
+    })
+    
+    QC15 <- try(if("Tier2c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2c != input$t2cD & Tier2c != input$t2cND & Tier2c != "N/A" & Tier2c != "NA")
+      
+    })
+    
+    QC16 <- try(if("Tier2c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aD & is.na(Tier2c))
+      
+    })
+    
+    QC17 <- try(if("Tier4b" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aD & is.na(Tier4b))
+      
+    })
+    
+    QC18 <- try(if("Tier2b" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aND & Tier2b == input$t2bD)
+      
+    })
+    
+    QC19 <- try(if("Tier2c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aND & Tier2c == input$t2cD)
+      
+    })
+    
+    QC20 <- try(if("Tier4b" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2 == input$t2aND & Tier4b == input$t4bD)
+      
+    })
+    
+    QC21 <- try(if("Tier4b" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier4b != input$t4bD & Tier4b != input$t4bND & Tier4b != "N/A" & Tier4b != "NA")
+      
+    })
+    
+    QC22 <- try(if("Tier4c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier4c != input$t4cD & Tier4c != input$t4cND & Tier4c!= "N/A" & Tier4c != "NA")
+      
+    })
+    
+    QC23 <- try(if("Tier4c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2b == input$t2bD & is.na(Tier4c))
+      
+    })
+    
+    QC24 <- try(if("Tier4c" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2b == input$t2bND & Tier4c == input$t4cD)
+      
+    })
+    
+    QC25 <- try(if("Tier4d" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier4d != input$t4dD & Tier4d != input$t4dND & Tier4d != "N/A" & Tier4d != "NA")
+      
+    })
+    
+    QC26 <- try(if("Tier4d" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2c == input$t2cD & is.na(Tier4d))
+      
+    })
+    
+    QC27 <- try(if("Tier4d" %in% colnames(allFlags)) {
+      
+      subset(allFlags, Tier2c == input$t2cND & Tier4d == input$t4dD)
+      
+    })
     #end logical QC checks
     
     
@@ -556,10 +647,71 @@ server <- function(input, output, session){
       QC12$Premise <- "Duplicate Visit for Subject"
     }, silent = TRUE)
     
+    try(if(QC13$Premise == "exp") {
+      QC13$Premise <- "T2b Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC14$Premise == "exp") {
+      QC14$Premise <- "T2(+) w/o Result in T2b"
+    }, silent = TRUE)
+    
+    try(if(QC15$Premise == "exp") {
+      QC15$Premise <- "T2c Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC16$Premise == "exp") {
+      QC16$Premise <- "T2(+) w/o Result in T2c"
+    }, silent = TRUE)
+    
+    try(if(QC17$Premise == "exp") {
+      QC17$Premise <- "T2(+) w/o Result in T4b"
+    }, silent = TRUE)
+    
+    try(if(QC18$Premise == "exp") {
+      QC18$Premise <- "T2(-) with T2b(+)"
+    }, silent = TRUE)
+    
+    try(if(QC19$Premise == "exp") {
+      QC19$Premise <- "T2(-) with T2c(+)"
+    }, silent = TRUE)
+    
+    try(if(QC20$Premise == "exp") {
+      QC20$Premise <- "T2(-) with T4b(+)"
+    }, silent = TRUE)
+    
+    try(if(QC21$Premise == "exp") {
+      QC21$Premise <- "T4b Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC22$Premise == "exp") {
+      QC22$Premise <- "T4c Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC23$Premise == "exp") {
+      QC23$Premise <- "T2b(+) w/o Result in T4c"
+    }, silent = TRUE)
+    
+    try(if(QC24$Premise == "exp") {
+      QC24$Premise <- "T2b(-) with T4c(+)"
+    }, silent = TRUE)
+    
+    try(if(QC25$Premise == "exp") {
+      QC25$Premise <- "T4d Discrepant Value"
+    }, silent = TRUE)
+    
+    try(if(QC26$Premise == "exp") {
+      QC26$Premise <- "T2c(+) w/o Result in T4d"
+    }, silent = TRUE)
+    
+    try(if(QC27$Premise == "exp") {
+      QC27$Premise <- "T2c(-) with T4d(+)"
+    }, silent = TRUE)
+    
     
     
     #combine all rows that have any of the errors above
-    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9, QC10, QC11, QC12))
+    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9, QC10, QC11, QC12, QC13, QC14,
+                            QC15, QC16, QC17, QC18, QC19, QC20, QC21, QC22, QC23, QC24, QC25, QC26, QC27))
     return(errorTable)
     
   }
@@ -730,29 +882,89 @@ server <- function(input, output, session){
     
     statsData <- myData()
     
-    # num of samples
-    allSamples <- nrow(subset(statsData, Tier1 == input$t1D | Tier1 == input$t1ND))
+    tier1Row <- try(if("Tier1" %in% colnames(statsData)) {
+      
+      rowFunc <- function() {
+        
+        cat("T1 exists\n");
+        
+        # num of Tier 1 samples tested
+        t1Tested <- nrow(subset(statsData, Tier1 == input$t1D | Tier1 == input$t1ND))
+        
+        # num of Tier 1 detected samples
+        t1Pos <- nrow(subset(statsData, Tier1 == input$t1D))
+        
+        # Tier 1 positive rate
+        t1PR <- round((t1Pos/t1Tested * 100), 2)
+        
+        #row for Tier 1
+        t1Table<- data.frame("SamplesTested" = (t1Tested),
+                             "Detected" = (t1Pos),
+                             "PositiveRate" = paste(t1PR, "%", sep = ""),
+                             row.names = c("Tier 1"))
+        
+        return(t1Table)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        cat("T1 column does not exist\n");
+        
+        #dummy row with NAs
+        t1Table <- data.frame("SamplesTested" = ("NA"),
+                              "Detected" = ("NA"),
+                              "PositiveRate" = (0),
+                              row.names = c("Tier 1"))
+        
+        return(t1Table)
+      }
+      
+    })
     
-    # num of Tier 1 detected samples
-    t1Pos <- nrow(subset(statsData, Tier1 == input$t1D))
     
-    # putative positive rate (num of Tier 1 detected samples / total samples)
-    putPR <- round((t1Pos/allSamples * 100), 2)
     
-    # num of Tier 2 samples tested
-    t2aTested <- nrow(subset(statsData, Tier2 == input$t2aD | Tier2 == input$t2aND))
-    
-    # num of Tier 2 detected samples
-    t2aPos <- nrow(subset(statsData, Tier2 == input$t2aD))
-    
-    # confirmed positive rate (num of Tier 2 detected samples / num of Tier 1 detected samples)
-    conPR <- round((t2aPos/t2aTested* 100), 2)
-    
-    #rows for Tier 1 and Tier 2
-    tier1and2Rows <- data.frame("SamplesTested" = c(allSamples, t2aTested),
-                                "Detected" = c(t1Pos, t2aPos),
-                                "PositiveRate" = c(paste(putPR, "%", sep = ""), paste(conPR, "%", sep = "")),
-                                row.names = c("Tier 1", "Tier 2"))
+    tier2aRow <- try(if("Tier2" %in% colnames(statsData)) {
+      
+      rowFunc <- function() {
+        
+        cat("T2 exists\n");
+        
+        # num of Tier 2 samples tested
+        t2aTested <- nrow(subset(statsData, Tier2 == input$t2aD | Tier2 == input$t2aND))
+        
+        # num of Tier 2 detected samples
+        t2aPos <- nrow(subset(statsData, Tier2 == input$t2aD))
+        
+        # Tier 2 positive rate
+        t2aPR <- round((t2aPos/t2aTested * 100), 2)
+        
+        #row for Tier 2
+        t2aTable<- data.frame("SamplesTested" = (t2aTested),
+                              "Detected" = (t2aPos),
+                              "PositiveRate" = paste(t2aPR, "%", sep = ""),
+                              row.names = c("Tier 2"))
+        
+        return(t2aTable)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        cat("T2 column does not exist\n");
+        
+        #dummy row with NAs
+        t2aTable<- data.frame("SamplesTested" = ("NA"),
+                              "Detected" = ("NA"),
+                              "PositiveRate" = (0),
+                              row.names = c("Tier 2"))
+        
+        return(t2aTable)
+      }
+      
+    })
     
     
     
@@ -768,7 +980,7 @@ server <- function(input, output, session){
         # num of Tier 2b detected samples
         t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
         
-        # Tier 2b positive rate (num of Tier 2b detected samples / num of Tier 2 detected samples)
+        # Tier 2b positive rate
         t2bPR <- round((t2bPos/t2bTested * 100), 2)
         
         #row for Tier 2b
@@ -811,7 +1023,7 @@ server <- function(input, output, session){
         # num of Tier 2c detected samples
         t2cPos <- nrow(subset(statsData, Tier2c == input$t2cD))
         
-        # Tier 2c positive rate (num of Tier 2c detected samples / num of Tier 2 detected samples)
+        # Tier 2c positive rate
         t2cPR <- round((t2cPos/t2cTested * 100), 2)
         
         #row for Tier 2c
@@ -854,7 +1066,7 @@ server <- function(input, output, session){
         # num of Tier 2d detected samples
         t2dPos <- nrow(subset(statsData, Tier2d == input$t2dD))
         
-        # Tier 2d positive rate (num of Tier 2d detected samples / num of Tier 2 detected samples)
+        # Tier 2d positive rate
         t2dPR <- round((t2dPos/t2dTested * 100), 2)
         
         #row for Tier 2d
@@ -897,7 +1109,7 @@ server <- function(input, output, session){
         # num of Tier 4 detected samples
         t4aPos <- nrow(subset(statsData, Tier4 == input$t4aD))
         
-        # Tier 4 positive rate (num of Tier 4 detected samples / num of Tier 2 detected samples)
+        # Tier 4 positive rate
         t4aPR <- round((t4aPos/t4aTested * 100), 2)
         
         #row for Tier 4
@@ -940,7 +1152,7 @@ server <- function(input, output, session){
         # num of Tier 4b detected samples
         t4bPos <- nrow(subset(statsData, Tier4b == input$t4bD))
         
-        # Tier 4b positive rate (num of Tier 4b detected samples / num of Tier 2 detected samples)
+        # Tier 4b positive rate
         t4bPR <- round((t4bPos/t4bTested * 100), 2)
         
         #row for Tier 4b
@@ -983,7 +1195,7 @@ server <- function(input, output, session){
         # num of Tier 4c detected samples
         t4cPos <- nrow(subset(statsData, Tier4c == input$t4cD))
         
-        # Tier 4c positive rate (num of Tier 4c detected samples / num of Tier 2b detected samples)
+        # Tier 4c positive rate
         t4cPR <- round((t4cPos/t4cTested * 100), 2)
         
         #row for Tier 4c
@@ -1026,7 +1238,7 @@ server <- function(input, output, session){
         # num of Tier 4d detected samples
         t4dPos <- nrow(subset(statsData, Tier4d == input$t4dD))
         
-        # Tier 4d positive rate (num of Tier 4d detected samples / num of Tier 2c detected samples)
+        # Tier 4d positive rate
         t4dPR <- round((t4dPos/t4dTested * 100), 2)
         
         #row for Tier 4d
@@ -1057,11 +1269,23 @@ server <- function(input, output, session){
     
     
     #combine all rows for each Tier
-    finalTierTable <- try(rbind(tier1and2Rows, tier2bRow(), tier2cRow(), tier2dRow(),
-                                tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
-    
-    #drop rows that do not have statistics (they do not appear in the dataset)  
-    subset(finalTierTable, SamplesTested != "NA")
+    if("Tier1" %in% colnames(statsData)) {
+      
+      finalTierTable <- try(rbind(tier1Row(), tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
+                                  tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
+      
+      #drop rows that do not have statistics (they do not appear in the dataset)  
+      subset(finalTierTable, SamplesTested != "NA")
+      
+    } else {
+      
+      altFinalTierTable <- try(rbind(tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
+                                     tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
+      
+      #drop rows that do not have statistics (they do not appear in the dataset)  
+      subset(altFinalTierTable, SamplesTested != "NA")
+      
+    }
     
     
     
@@ -1203,6 +1427,22 @@ server <- function(input, output, session){
   
   
   #begin "Help" tab
+  #begin Download documentation button
+  output$downloadGuide <- downloadHandler(
+    
+    filename <- function() {
+      paste("IAN User Guide", "pdf", sep=".")
+    },
+    
+    content <- function(file) {
+      file.copy("www/IAN User Guide.pdf", file)
+    },
+    contentType = "pdf"
+  )
+  #end Download documentation button
+  
+  
+  
   #begin help instructions
   output$help <- renderUI({
     
@@ -1319,20 +1559,6 @@ server <- function(input, output, session){
     
   })
   #end help instructions
-  
-  
-  #begin Download documentation button
-  output$downloadGuide <- downloadHandler(
-    filename <- function() {
-      paste("IAN User Guide", "pdf", sep=".")
-    },
-    
-    content <- function(file) {
-      file.copy("www/IAN User Guide.pdf", file)
-    },
-    contentType = "pdf"
-  )
-  #end Download documentation button
   #end "Help" tab
   
   
