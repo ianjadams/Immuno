@@ -110,9 +110,9 @@ ui<- shinyUI(fluidPage(
                               "Baseline Positives" = "bp",
                               "Unevaluated Subjects" = "uneval",
                               list("Shift Tables" = c(
-                              "Subject Pivot Table" = "subjects",
-                              "Treatment Emergent Pivot Table" = "te",
-                              "Titer Pivot Table" = "titercounts"))),
+                                "Subject Pivot Table" = "subjects",
+                                "Treatment Emergent Pivot Table" = "te",
+                                "Titer Pivot Table" = "titercounts"))),
                   selected = "original"),
       
       
@@ -144,7 +144,7 @@ ui<- shinyUI(fluidPage(
       )
     )
   )
- )
+)
 )
 #end Shiny UI interface
 
@@ -469,10 +469,21 @@ server <- function(input, output, session){
     
     #begin logical QC checks
     #tier1
-    QC1 <- subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
-    QC2 <- subset(allFlags, Tier1 == input$t1D & is.na(Tier2))
-    QC3 <- subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2aD)
-    QC4 <- subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
+    QC1 <- try(if("Tier1" %in% colnames(allFlags)) {
+      subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
+    })
+    
+    QC2 <- try(if("Tier1" %in% colnames(allFlags)) {
+      subset(allFlags, Tier1 == input$t1D & is.na(Tier2))
+    })
+    
+    QC3 <- try(if("Tier1" %in% colnames(allFlags)) { 
+      subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2aD)
+    })
+    
+    QC4 <- try(if("Tier1" %in% colnames(allFlags)) {
+      subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
+    })
     
     #tier2
     QC5 <- subset(allFlags, Tier2 != input$t2aD & Tier2 != input$t2aND & Tier2 != "N/A" & Tier2 != "NA")
@@ -512,7 +523,7 @@ server <- function(input, output, session){
     })
     
     QC14 <- try(if("Tier2b" %in% colnames(allFlags)) {
-        
+      
       subset(allFlags, Tier2 == input$t2aD & is.na(Tier2b))
       
     })
@@ -899,9 +910,9 @@ server <- function(input, output, session){
         
         #row for Tier 1
         t1Table<- data.frame("SamplesTested" = (t1Tested),
-                              "Detected" = (t1Pos),
-                              "PositiveRate" = paste(t1PR, "%", sep = ""),
-                              row.names = c("Tier 1"))
+                             "Detected" = (t1Pos),
+                             "PositiveRate" = paste(t1PR, "%", sep = ""),
+                             row.names = c("Tier 1"))
         
         return(t1Table)
       }
@@ -926,9 +937,9 @@ server <- function(input, output, session){
     
     
     tier2aRow <- try(if("Tier2" %in% colnames(statsData)) {
-
+      
       rowFunc <- function() {
-
+        
         cat("T2 exists\n");
         
         # num of Tier 2 samples tested
@@ -945,25 +956,25 @@ server <- function(input, output, session){
                               "Detected" = (t2aPos),
                               "PositiveRate" = paste(t2aPR, "%", sep = ""),
                               row.names = c("Tier 2"))
-
+        
         return(t2aTable)
       }
-
+      
     } else {
-
+      
       noRowFunc <- function() {
-
+        
         cat("T2 column does not exist\n");
-
+        
         #dummy row with NAs
         t2aTable<- data.frame("SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
                               "PositiveRate" = (0),
                               row.names = c("Tier 2"))
-
+        
         return(t2aTable)
       }
-
+      
     })
     
     
@@ -1276,16 +1287,16 @@ server <- function(input, output, session){
       
       #drop rows that do not have statistics (they do not appear in the dataset)  
       subset(finalTierTable, SamplesTested != "NA")
-    
-    } else {
-        
-        altFinalTierTable <- try(rbind(tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
-                                       tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
-        
-        #drop rows that do not have statistics (they do not appear in the dataset)  
-        subset(altFinalTierTable, SamplesTested != "NA")
       
-      }
+    } else {
+      
+      altFinalTierTable <- try(rbind(tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
+                                     tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
+      
+      #drop rows that do not have statistics (they do not appear in the dataset)  
+      subset(altFinalTierTable, SamplesTested != "NA")
+      
+    }
     
     
     

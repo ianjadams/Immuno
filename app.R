@@ -469,10 +469,21 @@ server <- function(input, output, session){
     
     #begin logical QC checks
     #tier1
-    QC1 <- subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
-    QC2 <- subset(allFlags, Tier1 == input$t1D & is.na(Tier2))
-    QC3 <- subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2aD)
-    QC4 <- subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
+    QC1 <- try(if("Tier1" %in% colnames(allFlags)) {
+      subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
+    })
+    
+    QC2 <- try(if("Tier1" %in% colnames(allFlags)) {
+      subset(allFlags, Tier1 == input$t1D & is.na(Tier2))
+    })
+    
+    QC3 <- try(if("Tier1" %in% colnames(allFlags)) { 
+      subset(allFlags, Tier1 == input$t1ND & Tier2 == input$t2aD)
+    })
+    
+    QC4 <- try(if("Tier1" %in% colnames(allFlags)) {
+      subset(allFlags, Tier1 == input$t1ND & Tier3 != 0)
+    })
     
     #tier2
     QC5 <- subset(allFlags, Tier2 != input$t2aD & Tier2 != input$t2aND & Tier2 != "N/A" & Tier2 != "NA")
