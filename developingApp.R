@@ -155,22 +155,32 @@ server <- function(input, output, session){
   
   
   #create reactive table on data load
-  #change Tier3 datatype to numeric and trim off "1:" from all values
-  #insert 0 into all empty (NA) fields in Tier3
-  #update data to change user input BL value to "Baseline"
-  myData <- reactive({
+  originalData <- reactive({
     
     inFile <- input$file1
     if (is.null(inFile)) return(NULL)
     initialData <- data.frame(read_excel(inFile$datapath))
-    initialData$Tier3 <- ifelse(substring(initialData$Tier3, 1, 2) == "1:",
-                                as.numeric(as.character(substring(initialData$Tier3, 3))),
-                                as.numeric(as.character(initialData$Tier3)))
-    initialData$Tier3[is.na(initialData$Tier3)] <- 0
-    initialData[initialData==input$baselineVisits] <- "Baseline"
     as.data.frame(initialData)
     
   })
+  
+  
+  
+  #change Tier3 datatype to numeric and trim off "1:" from all values
+  #insert 0 into all empty (NA) fields in Tier3
+  #update data to change user input BL value to "Baseline"
+  myData <- function() {
+
+    rawData <- originalData()
+
+    rawData$Tier3 <- ifelse(substring(rawData$Tier3, 1, 2) == "1:",
+                            as.numeric(as.character(substring(rawData$Tier3, 3))),
+                            as.numeric(as.character(rawData$Tier3)))
+    rawData$Tier3[is.na(rawData$Tier3)] <- 0
+    rawData[rawData==input$baselineVisits] <- "Baseline"
+    as.data.frame(rawData)
+
+  }
   
   
   
@@ -281,7 +291,7 @@ server <- function(input, output, session){
   
   
   #gets the unique visit codes once the original dataset has been loaded
-  observeEvent(myData(), {
+  observeEvent(originalData(), {
     updateSelectInput(session, "col", choices = names(pivotTableFunc()))
   })
   
@@ -746,7 +756,7 @@ server <- function(input, output, session){
     #SHOW ORIGINAL TABLE
     if(input$dropdown == "original") {
       
-      return(myData())
+      return(originalData())
       
     }
     #SHOW BASELINE VISITS TABLE
@@ -1458,21 +1468,14 @@ server <- function(input, output, session){
   output$help <- renderUI({
     
     HTML(
-      
-      # '<div id = document>',
-      # 
-      # '<p>Download the full documentation for this tool <a href="www/IAN User Guide.pdf">here</a>',
-      # '</p>',
-      # 
-      # '</div>',
-      
+
       '<div id = format>',
       
       '<h3>Data formatting and preprocessing</h3>',
       '<br />',
       
       '<p>Below is the precise phrasing for column headers. These columns are required.</p>',
-      '<p>Subject | Visit | Tier1 | Tier2 | Tier3 |</p>',
+      '<p><code>Subject | Visit | Tier1 | Tier2 | Tier3 |</code></p>',
       '<br />',
       '<p>Datasets with additional tier columns are not required, but must also have precise phrasing.</p>',
       '<p>Tier2b | Tier2c | Tier2d | Tier4 | Tier4b | Tier4c | Tier4d |</p>',
@@ -1564,9 +1567,7 @@ server <- function(input, output, session){
       
       '<br />'
       
-      
-      
-    )
+       )
     
   })
   #end help instructions
