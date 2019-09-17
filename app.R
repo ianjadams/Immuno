@@ -1475,10 +1475,10 @@ server <- function(input, output, session){
       '<br />',
       
       '<p>Below is the precise phrasing for column headers. These columns are required.</p>',
-      '<p><code>Subject | Visit | Tier1 | Tier2 | Tier3 |</code></p>',
+      '<p><code>Subject | Visit | Tier2 | Tier3</code></p>',
       '<br />',
       '<p>Datasets with additional tier columns are not required, but must also have precise phrasing.</p>',
-      '<p>Tier2b | Tier2c | Tier2d | Tier4 | Tier4b | Tier4c | Tier4d |</p>',
+      '<p><code>Tier1 | Tier2b | Tier2c | Tier2d | Tier4 | Tier4b | Tier4c | Tier4d</code></p>',
       
       '</div>',
       

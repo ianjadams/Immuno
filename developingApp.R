@@ -170,16 +170,16 @@ server <- function(input, output, session){
   #insert 0 into all empty (NA) fields in Tier3
   #update data to change user input BL value to "Baseline"
   myData <- function() {
-
+    
     rawData <- originalData()
-
+    
     rawData$Tier3 <- ifelse(substring(rawData$Tier3, 1, 2) == "1:",
                             as.numeric(as.character(substring(rawData$Tier3, 3))),
                             as.numeric(as.character(rawData$Tier3)))
     rawData$Tier3[is.na(rawData$Tier3)] <- 0
     rawData[rawData==input$baselineVisits] <- "Baseline"
     as.data.frame(rawData)
-
+    
   }
   
   
@@ -1468,17 +1468,17 @@ server <- function(input, output, session){
   output$help <- renderUI({
     
     HTML(
-
+      
       '<div id = format>',
       
       '<h3>Data formatting and preprocessing</h3>',
       '<br />',
       
       '<p>Below is the precise phrasing for column headers. These columns are required.</p>',
-      '<p><code>Subject | Visit | Tier1 | Tier2 | Tier3 |</code></p>',
+      '<p><code>Subject | Visit | Tier2 | Tier3</code></p>',
       '<br />',
       '<p>Datasets with additional tier columns are not required, but must also have precise phrasing.</p>',
-      '<p>Tier2b | Tier2c | Tier2d | Tier4 | Tier4b | Tier4c | Tier4d |</p>',
+      '<p><code>Tier1 | Tier2b | Tier2c | Tier2d | Tier4 | Tier4b | Tier4c | Tier4d</code></p>',
       
       '</div>',
       
@@ -1567,7 +1567,7 @@ server <- function(input, output, session){
       
       '<br />'
       
-       )
+    )
     
   })
   #end help instructions
