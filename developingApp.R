@@ -12,7 +12,7 @@ library(xlsx)
 
 
 #begin Shiny UI interface
-ui<- shinyUI(fluidPage(
+ui <- shinyUI(fluidPage(
   theme = shinytheme("flatly"),
   
   tags$head(
@@ -151,15 +151,20 @@ ui<- shinyUI(fluidPage(
 
 
 #begin Shiny server function
-server <- function(input, output, session){
+server <- function(input, output, session) {
   
   
   #create reactive table on data load
   originalData <- reactive({
     
+    #automatically enter text values for rows with missing Subject or missing Visit
+    #update data to change user input BL value to "Baseline"
     inFile <- input$file1
     if (is.null(inFile)) return(NULL)
     initialData <- data.frame(read_excel(inFile$datapath))
+    initialData$Subject[is.na(initialData$Subject)] <- "Unknown Subject"
+    initialData$Visit[is.na(initialData$Visit)] <- "Unknown Visit"
+    initialData[initialData==input$baselineVisits] <- "Baseline"
     as.data.frame(initialData)
     
   })
@@ -168,7 +173,6 @@ server <- function(input, output, session){
   
   #change Tier3 datatype to numeric and trim off "1:" from all values
   #insert 0 into all empty (NA) fields in Tier3
-  #update data to change user input BL value to "Baseline"
   myData <- function() {
     
     rawData <- originalData()
@@ -177,7 +181,6 @@ server <- function(input, output, session){
                             as.numeric(as.character(substring(rawData$Tier3, 3))),
                             as.numeric(as.character(rawData$Tier3)))
     rawData$Tier3[is.na(rawData$Tier3)] <- 0
-    rawData[rawData==input$baselineVisits] <- "Baseline"
     as.data.frame(rawData)
     
   }
@@ -739,7 +742,7 @@ server <- function(input, output, session){
   
   
   #begin "MRD" input field
-  output$mrdOut <- renderText({ 
+  output$mrdOut <- renderText({
     
     paste("MRD set at 1:", input$mrdIn, sep="")
     
