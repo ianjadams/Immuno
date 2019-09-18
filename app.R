@@ -160,6 +160,7 @@ server <- function(input, output, session){
     inFile <- input$file1
     if (is.null(inFile)) return(NULL)
     initialData <- data.frame(read_excel(inFile$datapath))
+    initialData[initialData==input$baselineVisits] <- "Baseline"
     as.data.frame(initialData)
     
   })
@@ -177,7 +178,6 @@ server <- function(input, output, session){
                             as.numeric(as.character(substring(rawData$Tier3, 3))),
                             as.numeric(as.character(rawData$Tier3)))
     rawData$Tier3[is.na(rawData$Tier3)] <- 0
-    rawData[rawData==input$baselineVisits] <- "Baseline"
     as.data.frame(rawData)
     
   }
