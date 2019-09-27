@@ -199,10 +199,10 @@ server <- function(input, output, session) {
   
   
   
-  nonBaselineFunc <- function() {
+  postBaselineFunc <- function() {
     
-    nonBaseline <- filter(myData(), Visit != "Baseline")
-    return(nonBaseline)
+    postBaseline <- filter(myData(), Visit != "Baseline")
+    return(postBaseline)
     
   }
   
@@ -930,30 +930,12 @@ server <- function(input, output, session) {
         # Tier 1 positive rate
         t1PR <- round((t1Pos/t1Tested * 100), 2)
         
-        # num of Tier 1 samples tested
-        t1BaseTested <- nrow(subset(baselineFunc(), Tier1 == input$t1D | Tier1 == input$t1ND))
-        
-        # num of Tier 1 detected samples
-        t1BasePos <- nrow(subset(baselineFunc(), Tier1 == input$t1D))
-        
-        # Tier 1 positive rate
-        t1BasePR <- round((t1BasePos/t1BaseTested * 100), 2)
-        
-        # num of Tier 1 samples tested
-        t1NonBaseTested <- nrow(subset(nonBaselineFunc(), Tier1 == input$t1D | Tier1 == input$t1ND))
-        
-        # num of Tier 1 detected samples
-        t1NonBasePos <- nrow(subset(nonBaselineFunc(), Tier1 == input$t1D))
-        
-        # Tier 1 positive rate
-        t1NonBasePR <- round((t1NonBasePos/t1NonBaseTested * 100), 2)
-        
         #row for Tier 1
-        t1Table<- data.frame("SampleSubset" = c(paste0("All"), paste0("Baseline"), paste0("Post-Baseline")),
-                             "SamplesTested" = c(t1Tested, t1BaseTested, t1NonBaseTested),
-                             "Detected" = c(t1Pos, t1BasePos, t1NonBasePos),
-                             "PositiveRate" = c(paste(t1PR, "%", sep = ""), paste(t1BasePR, "%", sep = ""), paste(t1NonBasePR, "%", sep = "")),
-                             row.names = c("Tier 1", " ", "  "))
+        t1Table<- data.frame("TierSubset" = paste0("Tier 1", sep = ""),
+                             "SamplesTested" = (t1Tested),
+                             "Detected" = (t1Pos),
+                             "PositiveRate" = paste(t1PR, "%", sep = ""),
+                             row.names = c("Total"))
         
         return(t1Table)
       }
@@ -965,7 +947,7 @@ server <- function(input, output, session) {
         cat("T1 column does not exist\n");
         
         #dummy row with NAs
-        t1Table <- data.frame("SampleSubset" = ("NA"),
+        t1Table <- data.frame("TierSubset" = ("NA"),
                               "SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
                               "PositiveRate" = (0),
@@ -993,30 +975,12 @@ server <- function(input, output, session) {
         # Tier 2 positive rate
         t2aPR <- round((t2aPos/t2aTested * 100), 2)
         
-        # num of Tier 1 samples tested
-        t2aBaseTested <- nrow(subset(baselineFunc(), Tier2 == input$t2aD | Tier2 == input$t2aND))
-        
-        # num of Tier 1 detected samples
-        t2aBasePos <- nrow(subset(baselineFunc(), Tier2 == input$t2aD))
-        
-        # Tier 1 positive rate
-        t2aBasePR <- round((t2aBasePos/t2aBaseTested * 100), 2)
-        
-        # num of Tier 1 samples tested
-        t2aNonBaseTested <- nrow(subset(nonBaselineFunc(), Tier2 == input$t2aD | Tier2 == input$t2aND))
-        
-        # num of Tier 1 detected samples
-        t2aNonBasePos <- nrow(subset(nonBaselineFunc(), Tier2 == input$t2aD))
-        
-        # Tier 1 positive rate
-        t2aNonBasePR <- round((t2aNonBasePos/t2aNonBaseTested * 100), 2)
-        
         #row for Tier 2
-        t2aTable<- data.frame("SampleSubset" = c(paste0("All"), paste0("Baseline"), paste0("Post-Baseline")),
-                              "SamplesTested" = c(t2aTested, t2aBaseTested, t2aNonBaseTested),
-                              "Detected" = c(t2aPos, t2aBasePos, t2aNonBasePos),
-                              "PositiveRate" = c(paste(t2aPR, "%", sep = ""), paste(t2aBasePR, "%", sep = ""), paste(t2aNonBasePR, "%", sep = "")),
-                              row.names = c("Tier 2", "   ", "    "))
+        t2aTable<- data.frame("TierSubset" = paste0("Tier 2", sep = ""),
+                              "SamplesTested" = (t2aTested),
+                              "Detected" = (t2aPos),
+                              "PositiveRate" = paste(t2aPR, "%", sep = ""),
+                              row.names = c(" "))
         
         return(t2aTable)
       }
@@ -1028,7 +992,7 @@ server <- function(input, output, session) {
         cat("T2 column does not exist\n");
         
         #dummy row with NAs
-        t2aTable<- data.frame("SampleSubset" = ("NA"),
+        t2aTable<- data.frame("TierSubset" = ("NA"),
                               "SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
                               "PositiveRate" = (0),
@@ -1042,467 +1006,1109 @@ server <- function(input, output, session) {
     
     
     tier2bRow <- try(if("Tier2b" %in% colnames(statsData)) {
-
+      
       rowFunc <- function() {
-
+        
         cat("T2b exists\n");
-
+        
         # num of Tier 2b samples tested
         t2bTested <- nrow(subset(statsData, Tier2b == input$t2bD | Tier2b == input$t2bND))
-
+        
         # num of Tier 2b detected samples
         t2bPos <- nrow(subset(statsData, Tier2b == input$t2bD))
-
+        
         # Tier 2b positive rate
         t2bPR <- round((t2bPos/t2bTested * 100), 2)
-
-        # num of Tier 1 samples tested
-        t2bBaseTested <- nrow(subset(baselineFunc(), Tier2b == input$t2bD | Tier2b == input$t2bND))
         
-        # num of Tier 1 detected samples
-        t2bBasePos <- nrow(subset(baselineFunc(), Tier2b == input$t2bD))
+        #row for Tier 2b
+        t2bTable<- data.frame("TierSubset" = paste0("Tier 2b", sep = ""),
+                              "SamplesTested" = (t2bTested),
+                              "Detected" = (t2bPos),
+                              "PositiveRate" = paste(t2bPR, "%", sep = ""),
+                              row.names = c("  "))
         
-        # Tier 1 positive rate
-        t2bBasePR <- round((t2bBasePos/t2bBaseTested * 100), 2)
-        
-        # num of Tier 1 samples tested
-        t2bNonBaseTested <- nrow(subset(nonBaselineFunc(), Tier2b == input$t2bD | Tier2b == input$t2bND))
-        
-        # num of Tier 1 detected samples
-        t2bNonBasePos <- nrow(subset(nonBaselineFunc(), Tier2b == input$t2bD))
-        
-        # Tier 1 positive rate
-        t2bNonBasePR <- round((t2bNonBasePos/t2bNonBaseTested * 100), 2)
-        
-        #row for Tier 2
-        t2bTable<- data.frame("SampleSubset" = c(paste0("All"), paste0("Baseline"), paste0("Post-Baseline")),
-                              "SamplesTested" = c(t2bTested, t2bBaseTested, t2bNonBaseTested),
-                              "Detected" = c(t2bPos, t2bBasePos, t2bNonBasePos),
-                              "PositiveRate" = c(paste(t2bPR, "%", sep = ""), paste(t2bBasePR, "%", sep = ""), paste(t2bNonBasePR, "%", sep = "")),
-                              row.names = c("Tier 2b", "     ", "      "))
-
         return(t2bTable)
       }
-
+      
     } else {
-
+      
       noRowFunc <- function() {
-
+        
         cat("T2b column does not exist\n");
-
+        
         #dummy row with NAs
-        t2bTable<- data.frame("SampleSubset" = ("NA"),
+        t2bTable<- data.frame("TierSubset" = ("NA"),
                               "SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
                               "PositiveRate" = (0),
                               row.names = c("Tier 2b"))
-
+        
         return(t2bTable)
       }
-
+      
     })
-
-
-
+    
+    
+    
     tier2cRow <- try(if("Tier2c" %in% colnames(statsData)) {
-
+      
       rowFunc <- function() {
-
+        
         cat("T2c exists\n");
-
+        
         # num of Tier 2c samples tested
         t2cTested <- nrow(subset(statsData, Tier2c == input$t2cD | Tier2c == input$t2cND))
-
+        
         # num of Tier 2c detected samples
         t2cPos <- nrow(subset(statsData, Tier2c == input$t2cD))
-
+        
         # Tier 2c positive rate
         t2cPR <- round((t2cPos/t2cTested * 100), 2)
-
-        # num of Tier 1 samples tested
-        t2cBaseTested <- nrow(subset(baselineFunc(), Tier2c == input$t2cD | Tier2c == input$t2cND))
-
-        # num of Tier 1 detected samples
-        t2cBasePos <- nrow(subset(baselineFunc(), Tier2c == input$t2cD))
-
-        # Tier 1 positive rate
-        t2cBasePR <- round((t2cBasePos/t2cBaseTested * 100), 2)
-
-        # num of Tier 1 samples tested
-        t2cNonBaseTested <- nrow(subset(nonBaselineFunc(), Tier2c == input$t2cD | Tier2c == input$t2cND))
-
-        # num of Tier 1 detected samples
-        t2cNonBasePos <- nrow(subset(nonBaselineFunc(), Tier2c == input$t2cD))
-
-        # Tier 1 positive rate
-        t2cNonBasePR <- round((t2cNonBasePos/t2cNonBaseTested * 100), 2)
-
-        #row for Tier 2
-        t2cTable<- data.frame("SampleSubset" = c(paste0("All"), paste0("Baseline"), paste0("Post-Baseline")),
-                              "SamplesTested" = c(t2cTested, t2cBaseTested, t2cNonBaseTested),
-                              "Detected" = c(t2cPos, t2cBasePos, t2cNonBasePos),
-                              "PositiveRate" = c(paste(t2cPR, "%", sep = ""), paste(t2cBasePR, "%", sep = ""), paste(t2cNonBasePR, "%", sep = "")),
-                              row.names = c("Tier 2c", "       ", "        "))
-
+        
+        #row for Tier 2c
+        t2cTable<- data.frame("TierSubset" = paste0("Tier 2c", sep = ""),
+                              "SamplesTested" = (t2cTested),
+                              "Detected" = (t2cPos),
+                              "PositiveRate" = paste(t2cPR, "%", sep = ""),
+                              row.names = c("   "))
+        
         return(t2cTable)
       }
-
+      
     } else {
-
+      
       noRowFunc <- function() {
-
+        
         cat("T2c column does not exist\n");
-
+        
         #dummy row with NAs
-        t2cTable<- data.frame("SampleSubset" = ("NA"),
+        t2cTable<- data.frame("TierSubset" = ("NA"),
                               "SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
                               "PositiveRate" = (0),
                               row.names = c("Tier 2c"))
-
+        
         return(t2cTable)
       }
-
+      
     })
-
-
-
+    
+    
+    
     tier2dRow <- try(if("Tier2d" %in% colnames(statsData)) {
-
+      
       rowFunc <- function() {
-
+        
         cat("T2d exists\n");
-
+        
         # num of Tier 2d samples tested
         t2dTested <- nrow(subset(statsData, Tier2d == input$t2dD | Tier2d == input$t2dND))
-
+        
         # num of Tier 2d detected samples
         t2dPos <- nrow(subset(statsData, Tier2d == input$t2dD))
-
+        
         # Tier 2d positive rate
         t2dPR <- round((t2dPos/t2dTested * 100), 2)
-
-        # num of Tier 1 samples tested
-        t2dBaseTested <- nrow(subset(baselineFunc(), Tier2d == input$t2dD | Tier2d == input$t2dND))
-
-        # num of Tier 1 detected samples
-        t2dBasePos <- nrow(subset(baselineFunc(), Tier2d == input$t2dD))
-
-        # Tier 1 positive rate
-        t2dBasePR <- round((t2dBasePos/t2dBaseTested * 100), 2)
-
-        # num of Tier 1 samples tested
-        t2dNonBaseTested <- nrow(subset(nonBaselineFunc(), Tier2d == input$t2dD | Tier2d == input$t2dND))
-
-        # num of Tier 1 detected samples
-        t2dNonBasePos <- nrow(subset(nonBaselineFunc(), Tier2d == input$t2dD))
-
-        # Tier 1 positive rate
-        t2dNonBasePR <- round((t2dNonBasePos/t2dNonBaseTested * 100), 2)
-
-        #row for Tier 2
-        t2dTable<- data.frame("SampleSubset" = c(paste0("All"), paste0("Baseline"), paste0("Post-Baseline")),
-                              "SamplesTested" = c(t2dTested, t2dBaseTested, t2dNonBaseTested),
-                              "Detected" = c(t2dPos, t2dBasePos, t2dNonBasePos),
-                              "PositiveRate" = c(paste(t2dPR, "%", sep = ""), paste(t2dBasePR, "%", sep = ""), paste(t2dNonBasePR, "%", sep = "")),
-                              row.names = c("Tier 2d", "         ", "          "))
-
+        
+        #row for Tier 2d
+        t2dTable<- data.frame("TierSubset" = paste0("Tier 2d", sep = ""),
+                              "SamplesTested" = (t2dTested),
+                              "Detected" = (t2dPos),
+                              "PositiveRate" = paste(t2dPR, "%", sep = ""),
+                              row.names = c("    "))
+        
         return(t2dTable)
       }
-
+      
     } else {
-
+      
       noRowFunc <- function() {
-
+        
         cat("T2d column does not exist\n");
-
+        
         #dummy row with NAs
-        t2dTable<- data.frame("SampleSubset" = ("NA"),
+        t2dTable<- data.frame("TierSubset" = ("NA"),
                               "SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
                               "PositiveRate" = (0),
                               row.names = c("Tier 2d"))
-
+        
         return(t2dTable)
       }
-
+      
     })
-
-
-
+    
+    
+    
     tier4aRow <- try(if("Tier4" %in% colnames(statsData)) {
-
+      
       rowFunc <- function() {
-
+        
         cat("T4 exists\n");
-
+        
         # num of Tier 4 samples tested
         t4aTested <- nrow(subset(statsData, Tier4 == input$t4aD | Tier4 == input$t4aND))
-
+        
         # num of Tier 4 detected samples
         t4aPos <- nrow(subset(statsData, Tier4 == input$t4aD))
-
+        
         # Tier 4 positive rate
         t4aPR <- round((t4aPos/t4aTested * 100), 2)
-
-        # num of Tier 1 samples tested
-        t4aBaseTested <- nrow(subset(baselineFunc(), Tier4 == input$t4aD | Tier4 == input$t4aND))
-
-        # num of Tier 1 detected samples
-        t4aBasePos <- nrow(subset(baselineFunc(), Tier4 == input$t4aD))
-
-        # Tier 1 positive rate
-        t4aBasePR <- round((t4aBasePos/t4aBaseTested * 100), 2)
-
-        # num of Tier 1 samples tested
-        t4aNonBaseTested <- nrow(subset(nonBaselineFunc(), Tier4 == input$t4aD | Tier4 == input$t4aND))
-
-        # num of Tier 1 detected samples
-        t4aNonBasePos <- nrow(subset(nonBaselineFunc(), Tier4 == input$t4aD))
-
-        # Tier 1 positive rate
-        t4aNonBasePR <- round((t4aNonBasePos/t4aNonBaseTested * 100), 2)
-
-        #row for Tier 2
-        t4aTable<- data.frame("SampleSubset" = c(paste0("All"), paste0("Baseline"), paste0("Post-Baseline")),
-                              "SamplesTested" = c(t4aTested, t4aBaseTested, t4aNonBaseTested),
-                              "Detected" = c(t4aPos, t4aBasePos, t4aNonBasePos),
-                              "PositiveRate" = c(paste(t4aPR, "%", sep = ""), paste(t4aBasePR, "%", sep = ""), paste(t4aNonBasePR, "%", sep = "")),
-                              row.names = c("Tier 4", "           ", "            "))
-
+        
+        #row for Tier 4
+        t4aTable<- data.frame("TierSubset" = paste0("Tier 4", sep = ""),
+                              "SamplesTested" = (t4aTested),
+                              "Detected" = (t4aPos),
+                              "PositiveRate" = paste(t4aPR, "%", sep = ""),
+                              row.names = c("     "))
+        
         return(t4aTable)
       }
-
+      
     } else {
-
+      
       noRowFunc <- function() {
-
+        
         cat("T4 column does not exist\n");
-
+        
         #dummy row with NAs
-        t4aTable<- data.frame("SampleSubset" = ("NA"),
+        t4aTable<- data.frame("TierSubset" = ("NA"),
                               "SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
                               "PositiveRate" = (0),
                               row.names = c("Tier 4"))
-
+        
         return(t4aTable)
       }
-
+      
     })
-
-
-
+    
+    
+    
     tier4bRow <- try(if("Tier4b" %in% colnames(statsData)) {
-
+      
       rowFunc <- function() {
-
+        
         cat("T4b exists\n");
-
+        
         # num of Tier 4b samples tested
         t4bTested <- nrow(subset(statsData, Tier4b == input$t4bD | Tier4b == input$t4bND))
-
+        
         # num of Tier 4b detected samples
         t4bPos <- nrow(subset(statsData, Tier4b == input$t4bD))
-
+        
         # Tier 4b positive rate
         t4bPR <- round((t4bPos/t4bTested * 100), 2)
-
-        # num of Tier 1 samples tested
-        t4bBaseTested <- nrow(subset(baselineFunc(), Tier4b == input$t4bD | Tier4b == input$t4bND))
         
-        # num of Tier 1 detected samples
-        t4bBasePos <- nrow(subset(baselineFunc(), Tier4b == input$t4bD))
+        #row for Tier 4b
+        t4bTable<- data.frame("TierSubset" = paste0("Tier 4b", sep = ""),
+                              "SamplesTested" = (t4bTested),
+                              "Detected" = (t4bPos),
+                              "PositiveRate" = paste(t4bPR, "%", sep = ""),
+                              row.names = c("      "))
         
-        # Tier 1 positive rate
-        t4bBasePR <- round((t4bBasePos/t4bBaseTested * 100), 2)
-        
-        # num of Tier 1 samples tested
-        t4bNonBaseTested <- nrow(subset(nonBaselineFunc(), Tier4b == input$t4bD | Tier4b == input$t4bND))
-        
-        # num of Tier 1 detected samples
-        t4bNonBasePos <- nrow(subset(nonBaselineFunc(), Tier4b == input$t4bD))
-        
-        # Tier 1 positive rate
-        t4bNonBasePR <- round((t4bNonBasePos/t4bNonBaseTested * 100), 2)
-        
-        #row for Tier 2
-        t4bTable<- data.frame("SampleSubset" = c(paste0("All"), paste0("Baseline"), paste0("Post-Baseline")),
-                              "SamplesTested" = c(t4bTested, t4bBaseTested, t4bNonBaseTested),
-                              "Detected" = c(t4bPos, t4bBasePos, t4bNonBasePos),
-                              "PositiveRate" = c(paste(t4bPR, "%", sep = ""), paste(t4bBasePR, "%", sep = ""), paste(t4bNonBasePR, "%", sep = "")),
-                              row.names = c("Tier 4b", "             ", "              "))
-
         return(t4bTable)
       }
-
+      
     } else {
-
+      
       noRowFunc <- function() {
-
+        
         cat("T4b column does not exist\n");
-
+        
         #dummy row with NAs
-        t4bTable<- data.frame("SampleSubset" = ("NA"),
+        t4bTable<- data.frame("TierSubset" = ("NA"),
                               "SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
                               "PositiveRate" = (0),
                               row.names = c("Tier 4b"))
-
+        
         return(t4bTable)
       }
-
+      
     })
-
-
-
+    
+    
+    
     tier4cRow <- try(if("Tier4c" %in% colnames(statsData)) {
-
+      
       rowFunc <- function() {
-
+        
         cat("T4c exists\n");
-
+        
         # num of Tier 4c samples tested
         t4cTested <- nrow(subset(statsData, Tier4c == input$t4cD | Tier4c == input$t4cND))
-
+        
         # num of Tier 4c detected samples
         t4cPos <- nrow(subset(statsData, Tier4c == input$t4cD))
-
+        
         # Tier 4c positive rate
         t4cPR <- round((t4cPos/t4cTested * 100), 2)
-
-        # num of Tier 1 samples tested
-        t4cBaseTested <- nrow(subset(baselineFunc(), Tier4c == input$t4cD | Tier4c == input$t4cND))
         
-        # num of Tier 1 detected samples
-        t4cBasePos <- nrow(subset(baselineFunc(), Tier4c == input$t4cD))
+        #row for Tier 4c
+        t4cTable<- data.frame("TierSubset" = paste0("Tier 4c", sep = ""),
+                              "SamplesTested" = (t4cTested),
+                              "Detected" = (t4cPos),
+                              "PositiveRate" = paste(t4cPR, "%", sep = ""),
+                              row.names = c("       "))
         
-        # Tier 1 positive rate
-        t4cBasePR <- round((t4cBasePos/t4cBaseTested * 100), 2)
-        
-        # num of Tier 1 samples tested
-        t4cNonBaseTested <- nrow(subset(nonBaselineFunc(), Tier4c == input$t4cD | Tier4c == input$t4cND))
-        
-        # num of Tier 1 detected samples
-        t4cNonBasePos <- nrow(subset(nonBaselineFunc(), Tier4c == input$t4cD))
-        
-        # Tier 1 positive rate
-        t4cNonBasePR <- round((t4cNonBasePos/t4cNonBaseTested * 100), 2)
-        
-        #row for Tier 2
-        t4cTable<- data.frame("SampleSubset" = c(paste0("All"), paste0("Baseline"), paste0("Post-Baseline")),
-                              "SamplesTested" = c(t4cTested, t4cBaseTested, t4cNonBaseTested),
-                              "Detected" = c(t4cPos, t4cBasePos, t4cNonBasePos),
-                              "PositiveRate" = c(paste(t4cPR, "%", sep = ""), paste(t4cBasePR, "%", sep = ""), paste(t4cNonBasePR, "%", sep = "")),
-                              row.names = c("Tier 4c", "               ", "                "))
-
         return(t4cTable)
       }
-
+      
     } else {
-
+      
       noRowFunc <- function() {
-
+        
         cat("T4c column does not exist\n");
-
+        
         #dummy row with NAs
-        t4cTable<- data.frame("SampleSubset" = ("NA"),
+        t4cTable<- data.frame("TierSubset" = ("NA"),
                               "SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
                               "PositiveRate" = (0),
                               row.names = c("Tier 4c"))
-
+        
         return(t4cTable)
       }
-
+      
     })
-
-
-
+    
+    
+    
     tier4dRow <- try(if("Tier4d" %in% colnames(statsData)) {
-
+      
       rowFunc <- function() {
-
+        
         cat("T4d exists\n");
-
+        
         # num of Tier 4d samples tested
         t4dTested <- nrow(subset(statsData, Tier4d == input$t4dD | Tier4d == input$t4dND))
-
+        
         # num of Tier 4d detected samples
         t4dPos <- nrow(subset(statsData, Tier4d == input$t4dD))
-
+        
         # Tier 4d positive rate
         t4dPR <- round((t4dPos/t4dTested * 100), 2)
-
-        # num of Tier 1 samples tested
-        t4dBaseTested <- nrow(subset(baselineFunc(), Tier4d == input$t4dD | Tier4d == input$t4dND))
         
-        # num of Tier 1 detected samples
-        t4dBasePos <- nrow(subset(baselineFunc(), Tier4d == input$t4dD))
+        #row for Tier 4d
+        t4dTable<- data.frame("TierSubset" = paste0("Tier 4d", sep = ""),
+                              "SamplesTested" = (t4dTested),
+                              "Detected" = (t4dPos),
+                              "PositiveRate" = paste(t4dPR, "%", sep = ""),
+                              row.names = c("        "))
         
-        # Tier 1 positive rate
-        t4dBasePR <- round((t4dBasePos/t4dBaseTested * 100), 2)
-        
-        # num of Tier 1 samples tested
-        t4dNonBaseTested <- nrow(subset(nonBaselineFunc(), Tier4d == input$t4dD | Tier4d == input$t4dND))
-        
-        # num of Tier 1 detected samples
-        t4dNonBasePos <- nrow(subset(nonBaselineFunc(), Tier4d == input$t4dD))
-        
-        # Tier 1 positive rate
-        t4dNonBasePR <- round((t4dNonBasePos/t4dNonBaseTested * 100), 2)
-        
-        #row for Tier 2
-        t4dTable<- data.frame("SampleSubset" = c(paste0("All"), paste0("Baseline"), paste0("Post-Baseline")),
-                              "SamplesTested" = c(t4dTested, t4dBaseTested, t4dNonBaseTested),
-                              "Detected" = c(t4dPos, t4dBasePos, t4dNonBasePos),
-                              "PositiveRate" = c(paste(t4dPR, "%", sep = ""), paste(t4dBasePR, "%", sep = ""), paste(t4dNonBasePR, "%", sep = "")),
-                              row.names = c("Tier 4d", "                 ", "                  "))
-
         return(t4dTable)
       }
-
+      
     } else {
-
+      
       noRowFunc <- function() {
-
+        
         cat("T4d column does not exist\n");
-
+        
         #dummy row with NAs
-        t4dTable<- data.frame("SampleSubset" = ("NA"),
+        t4dTable<- data.frame("TierSubset" = ("NA"),
                               "SamplesTested" = ("NA"),
                               "Detected" = ("NA"),
                               "PositiveRate" = (0),
                               row.names = c("Tier 4d"))
-
+        
         return(t4dTable)
       }
-
+      
     })
-
-
-    #combine all rows for each Tier
-    if("Tier1" %in% colnames(statsData)) {
-
-    finalTierTable <- try(rbind(tier1Row(), tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
-                                tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
-
-      #drop rows that do not have statistics (they do not appear in the dataset)
-      subset(finalTierTable, SamplesTested != "NA")
-
+    
+    
+    # #combine all rows for each Tier
+    # if("Tier1" %in% colnames(statsData)) {
+    #   
+    #   finalTierTable <- try(rbind(tier1Row(), tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
+    #                               tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
+    #   
+    #   #drop rows that do not have statistics (they do not appear in the dataset)  
+    #   subset(finalTierTable, SamplesTested != "NA")
+    #   
+    # } else {
+    #   
+    #   altFinalTierTable <- try(rbind(tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
+    #                                  tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
+    #   
+    #   #drop rows that do not have statistics (they do not appear in the dataset)  
+    #   subset(altFinalTierTable, SamplesTested != "NA")
+    #   
+    # }
+    
+    
+    
+    
+    baseData <- baselineFunc()
+    
+    tier1RowBase <- try(if("Tier1" %in% colnames(baseData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 1 samples tested
+        t1TestedBase <- nrow(subset(baseData, Tier1 == input$t1D | Tier1 == input$t1ND))
+        
+        # num of Tier 1 detected samples
+        t1PosBase <- nrow(subset(baseData, Tier1 == input$t1D))
+        
+        # Tier 1 positive rate
+        t1PRBase <- round((t1PosBase/t1TestedBase * 100), 2)
+        
+        #row for Tier 1
+        t1TableBase <- data.frame("TierSubset" = paste("Tier 1", sep = ""),
+                                  "SamplesTested" = (t1TestedBase),
+                                  "Detected" = (t1PosBase),
+                                  "PositiveRate" = paste(t1PRBase, "%", sep = ""),
+                                  row.names = c("Baseline"))
+        
+        return(t1TableBase)
+      }
+      
     } else {
-
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t1TableBase <- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 1 "))
+        
+        return(t1TableBase)
+      }
+      
+    })
+    
+    
+    
+    tier2aRowBase <- try(if("Tier2" %in% colnames(baseData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 2 samples tested
+        t2aTestedBase <- nrow(subset(baseData, Tier2 == input$t2aD | Tier2 == input$t2aND))
+        
+        # num of Tier 2 detected samples
+        t2aPosBase <- nrow(subset(baseData, Tier2 == input$t2aD))
+        
+        # Tier 2 positive rate
+        t2aPRBase <- round((t2aPosBase/t2aTestedBase * 100), 2)
+        
+        #row for Tier 2
+        t2aTableBase<- data.frame("TierSubset" = paste("Tier 2", sep = ""),
+                                  "SamplesTested" = (t2aTestedBase),
+                                  "Detected" = (t2aPosBase),
+                                  "PositiveRate" = paste(t2aPRBase, "%", sep = ""),
+                                  row.names = c("         "))
+        
+        return(t2aTableBase)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t2aTableBase<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 2 "))
+        
+        return(t2aTableBase)
+      }
+      
+    })
+    
+    
+    
+    tier2bRowBase <- try(if("Tier2b" %in% colnames(baseData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 2b samples tested
+        t2bTestedBase <- nrow(subset(baseData, Tier2b == input$t2bD | Tier2b == input$t2bND))
+        
+        # num of Tier 2b detected samples
+        t2bPosBase <- nrow(subset(baseData, Tier2b == input$t2bD))
+        
+        # Tier 2b positive rate
+        t2bPRBase <- round((t2bPosBase/t2bTestedBase * 100), 2)
+        
+        #row for Tier 2b
+        t2bTableBase<- data.frame("TierSubset" = paste0("Tier 2b", sep = ""),
+                                  "SamplesTested" = (t2bTestedBase),
+                                  "Detected" = (t2bPosBase),
+                                  "PositiveRate" = paste(t2bPRBase, "%", sep = ""),
+                                  row.names = c("          "))
+        
+        return(t2bTableBase)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t2bTableBase<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 2b "))
+        
+        return(t2bTableBase)
+      }
+      
+    })
+    
+    
+    
+    tier2cRowBase <- try(if("Tier2c" %in% colnames(baseData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 2c samples tested
+        t2cTestedBase <- nrow(subset(baseData, Tier2c == input$t2cD | Tier2c == input$t2cND))
+        
+        # num of Tier 2c detected samples
+        t2cPosBase <- nrow(subset(baseData, Tier2c == input$t2cD))
+        
+        # Tier 2c positive rate
+        t2cPRBase <- round((t2cPosBase/t2cTestedBase * 100), 2)
+        
+        #row for Tier 2c
+        t2cTableBase<- data.frame("TierSubset" = paste0("Tier 2c", sep = ""),
+                                  "SamplesTested" = (t2cTestedBase),
+                                  "Detected" = (t2cPosBase),
+                                  "PositiveRate" = paste(t2cPRBase, "%", sep = ""),
+                                  row.names = c("           "))
+        
+        return(t2cTableBase)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t2cTableBase<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 2c "))
+        
+        return(t2cTableBase)
+      }
+      
+    })
+    
+    
+    
+    tier2dRowBase <- try(if("Tier2d" %in% colnames(baseData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 2d samples tested
+        t2dTestedBase <- nrow(subset(baseData, Tier2d == input$t2dD | Tier2d == input$t2dND))
+        
+        # num of Tier 2d detected samples
+        t2dPosBase <- nrow(subset(baseData, Tier2d == input$t2dD))
+        
+        # Tier 2d positive rate
+        t2dPRBase <- round((t2dPosBase/t2dTestedBase * 100), 2)
+        
+        #row for Tier 2d
+        t2dTableBase<- data.frame("TierSubset" = paste0("Tier 2d", sep = ""),
+                                  "SamplesTested" = (t2dTestedBase),
+                                  "Detected" = (t2dPosBase),
+                                  "PositiveRate" = paste(t2dPRBase, "%", sep = ""),
+                                  row.names = c("            "))
+        
+        return(t2dTableBase)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t2dTableBase<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 2d "))
+        
+        return(t2dTableBase)
+      }
+      
+    })
+    
+    
+    
+    tier4aRowBase <- try(if("Tier4" %in% colnames(baseData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4 samples tested
+        t4aTestedBase <- nrow(subset(baseData, Tier4 == input$t4aD | Tier4 == input$t4aND))
+        
+        # num of Tier 4 detected samples
+        t4aPosBase <- nrow(subset(baseData, Tier4 == input$t4aD))
+        
+        # Tier 4 positive rate
+        t4aPRBase <- round((t4aPosBase/t4aTestedBase * 100), 2)
+        
+        #row for Tier 4
+        t4aTableBase<- data.frame("TierSubset" = paste0("Tier 4", sep = ""),
+                                  "SamplesTested" = (t4aTestedBase),
+                                  "Detected" = (t4aPosBase),
+                                  "PositiveRate" = paste(t4aPRBase, "%", sep = ""),
+                                  row.names = c("             "))
+        
+        return(t4aTableBase)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4aTableBase<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4 "))
+        
+        return(t4aTableBase)
+      }
+      
+    })
+    
+    
+    
+    tier4bRowBase <- try(if("Tier4b" %in% colnames(baseData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4b samples tested
+        t4bTestedBase <- nrow(subset(baseData, Tier4b == input$t4bD | Tier4b == input$t4bND))
+        
+        # num of Tier 4b detected samples
+        t4bPosBase <- nrow(subset(baseData, Tier4b == input$t4bD))
+        
+        # Tier 4b positive rate
+        t4bPRBase <- round((t4bPosBase/t4bTestedBase * 100), 2)
+        
+        #row for Tier 4b
+        t4bTableBase<- data.frame("TierSubset" = paste0("Tier 4b", sep = ""),
+                                  "SamplesTested" = (t4bTestedBase),
+                                  "Detected" = (t4bPosBase),
+                                  "PositiveRate" = paste(t4bPRBase, "%", sep = ""),
+                                  row.names = c("              "))
+        
+        return(t4bTableBase)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4bTableBase<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4b "))
+        
+        return(t4bTableBase)
+      }
+      
+    })
+    
+    
+    
+    tier4cRowBase <- try(if("Tier4c" %in% colnames(baseData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4c samples tested
+        t4cTestedBase <- nrow(subset(baseData, Tier4c == input$t4cD | Tier4c == input$t4cND))
+        
+        # num of Tier 4c detected samples
+        t4cPosBase <- nrow(subset(baseData, Tier4c == input$t4cD))
+        
+        # Tier 4c positive rate
+        t4cPRBase <- round((t4cPosBase/t4cTestedBase * 100), 2)
+        
+        #row for Tier 4c
+        t4cTableBase<- data.frame("TierSubset" = paste0("Tier 4c", sep = ""),
+                                  "SamplesTested" = (t4cTestedBase),
+                                  "Detected" = (t4cPosBase),
+                                  "PositiveRate" = paste(t4cPRBase, "%", sep = ""),
+                                  row.names = c("               "))
+        
+        return(t4cTableBase)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4cTableBase<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4c "))
+        
+        return(t4cTableBase)
+      }
+      
+    })
+    
+    
+    
+    tier4dRowBase <- try(if("Tier4d" %in% colnames(baseData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4d samples tested
+        t4dTestedBase <- nrow(subset(baseData, Tier4d == input$t4dD | Tier4d == input$t4dND))
+        
+        # num of Tier 4d detected samples
+        t4dPosBase <- nrow(subset(baseData, Tier4d == input$t4dD))
+        
+        # Tier 4d positive rate
+        t4dPRBase <- round((t4dPosBase/t4dTestedBase * 100), 2)
+        
+        #row for Tier 4d
+        t4dTableBase<- data.frame("TierSubset" = paste0("Tier 4d", sep = ""),
+                                  "SamplesTested" = (t4dTestedBase),
+                                  "Detected" = (t4dPosBase),
+                                  "PositiveRate" = paste(t4dPRBase, "%", sep = ""),
+                                  row.names = c("                "))
+        
+        return(t4dTableBase)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4dTableBase<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4d "))
+        
+        return(t4dTableBase)
+      }
+      
+    })
+    
+    
+    
+    postData <- (postBaselineFunc())
+    
+    tier1RowPost <- try(if("Tier1" %in% colnames(postData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 1 samples tested
+        t1TestedPost <- nrow(subset(postData, Tier1 == input$t1D | Tier1 == input$t1ND))
+        
+        # num of Tier 1 detected samples
+        t1PosPost <- nrow(subset(postData, Tier1 == input$t1D))
+        
+        # Tier 1 positive rate
+        t1PRPost <- round((t1PosPost/t1TestedPost * 100), 2)
+        
+        #row for Tier 1
+        t1TablePost <- data.frame("TierSubset" = paste("Tier 1", sep = ""),
+                                  "SamplesTested" = (t1TestedPost),
+                                  "Detected" = (t1PosPost),
+                                  "PositiveRate" = paste(t1PRPost, "%", sep = ""),
+                                  row.names = c("Post-Baseline"))
+        
+        return(t1TablePost)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t1TablePost <- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 1 "))
+        
+        return(t1TablePost)
+      }
+      
+    })
+    
+    
+    
+    tier2aRowPost <- try(if("Tier2" %in% colnames(postData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 2 samples tested
+        t2aTestedPost <- nrow(subset(postData, Tier2 == input$t2aD | Tier2 == input$t2aND))
+        
+        # num of Tier 2 detected samples
+        t2aPosPost <- nrow(subset(postData, Tier2 == input$t2aD))
+        
+        # Tier 2 positive rate
+        t2aPRPost <- round((t2aPosPost/t2aTestedPost * 100), 2)
+        
+        #row for Tier 2
+        t2aTablePost<- data.frame("TierSubset" = paste("Tier 2", sep = ""),
+                                  "SamplesTested" = (t2aTestedPost),
+                                  "Detected" = (t2aPosPost),
+                                  "PositiveRate" = paste(t2aPRPost, "%", sep = ""),
+                                  row.names = c("                 "))
+        
+        return(t2aTablePost)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t2aTablePost<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 2 "))
+        
+        return(t2aTablePost)
+      }
+      
+    })
+    
+    
+    
+    tier2bRowPost <- try(if("Tier2b" %in% colnames(postData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 2b samples tested
+        t2bTestedPost <- nrow(subset(postData, Tier2b == input$t2bD | Tier2b == input$t2bND))
+        
+        # num of Tier 2b detected samples
+        t2bPosPost <- nrow(subset(postData, Tier2b == input$t2bD))
+        
+        # Tier 2b positive rate
+        t2bPRPost <- round((t2bPosPost/t2bTestedPost * 100), 2)
+        
+        #row for Tier 2b
+        t2bTablePost<- data.frame("TierSubset" = paste0("Tier 2b", sep = ""),
+                                  "SamplesTested" = (t2bTestedPost),
+                                  "Detected" = (t2bPosPost),
+                                  "PositiveRate" = paste(t2bPRPost, "%", sep = ""),
+                                  row.names = c("                  "))
+        
+        return(t2bTablePost)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t2bTablePost<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 2b "))
+        
+        return(t2bTablePost)
+      }
+      
+    })
+    
+    
+    
+    tier2cRowPost <- try(if("Tier2c" %in% colnames(postData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 2c samples tested
+        t2cTestedPost <- nrow(subset(postData, Tier2c == input$t2cD | Tier2c == input$t2cND))
+        
+        # num of Tier 2c detected samples
+        t2cPosPost <- nrow(subset(postData, Tier2c == input$t2cD))
+        
+        # Tier 2c positive rate
+        t2cPRPost <- round((t2cPosPost/t2cTestedPost * 100), 2)
+        
+        #row for Tier 2c
+        t2cTablePost<- data.frame("TierSubset" = paste0("Tier 2c", sep = ""),
+                                  "SamplesTested" = (t2cTestedPost),
+                                  "Detected" = (t2cPosPost),
+                                  "PositiveRate" = paste(t2cPRPost, "%", sep = ""),
+                                  row.names = c("                   "))
+        
+        return(t2cTablePost)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t2cTablePost<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 2c "))
+        
+        return(t2cTablePost)
+      }
+      
+    })
+    
+    
+    
+    tier2dRowPost <- try(if("Tier2d" %in% colnames(postData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 2d samples tested
+        t2dTestedPost <- nrow(subset(postData, Tier2d == input$t2dD | Tier2d == input$t2dND))
+        
+        # num of Tier 2d detected samples
+        t2dPosPost <- nrow(subset(postData, Tier2d == input$t2dD))
+        
+        # Tier 2d positive rate
+        t2dPRPost <- round((t2dPosPost/t2dTestedPost * 100), 2)
+        
+        #row for Tier 2d
+        t2dTablePost<- data.frame("TierSubset" = paste0("Tier 2d", sep = ""),
+                                  "SamplesTested" = (t2dTestedPost),
+                                  "Detected" = (t2dPosPost),
+                                  "PositiveRate" = paste(t2dPRPost, "%", sep = ""),
+                                  row.names = c("                    "))
+        
+        return(t2dTablePost)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t2dTablePost<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 2d "))
+        
+        return(t2dTablePost)
+      }
+      
+    })
+    
+    
+    
+    tier4aRowPost <- try(if("Tier4" %in% colnames(postData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4 samples tested
+        t4aTestedPost <- nrow(subset(postData, Tier4 == input$t4aD | Tier4 == input$t4aND))
+        
+        # num of Tier 4 detected samples
+        t4aPosPost <- nrow(subset(postData, Tier4 == input$t4aD))
+        
+        # Tier 4 positive rate
+        t4aPRPost <- round((t4aPosPost/t4aTestedPost * 100), 2)
+        
+        #row for Tier 4
+        t4aTablePost<- data.frame("TierSubset" = paste0("Tier 4", sep = ""),
+                                  "SamplesTested" = (t4aTestedPost),
+                                  "Detected" = (t4aPosPost),
+                                  "PositiveRate" = paste(t4aPRPost, "%", sep = ""),
+                                  row.names = c("                     "))
+        
+        return(t4aTablePost)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4aTablePost<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4 "))
+        
+        return(t4aTablePost)
+      }
+      
+    })
+    
+    
+    
+    tier4bRowPost <- try(if("Tier4b" %in% colnames(postData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4b samples tested
+        t4bTestedPost <- nrow(subset(postData, Tier4b == input$t4bD | Tier4b == input$t4bND))
+        
+        # num of Tier 4b detected samples
+        t4bPosPost <- nrow(subset(postData, Tier4b == input$t4bD))
+        
+        # Tier 4b positive rate
+        t4bPRPost <- round((t4bPosPost/t4bTestedPost * 100), 2)
+        
+        #row for Tier 4b
+        t4bTablePost<- data.frame("TierSubset" = paste0("Tier 4b", sep = ""),
+                                  "SamplesTested" = (t4bTestedPost),
+                                  "Detected" = (t4bPosPost),
+                                  "PositiveRate" = paste(t4bPRPost, "%", sep = ""),
+                                  row.names = c("                      "))
+        
+        return(t4bTablePost)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4bTablePost<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4b "))
+        
+        return(t4bTablePost)
+      }
+      
+    })
+    
+    
+    
+    tier4cRowPost <- try(if("Tier4c" %in% colnames(postData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4c samples tested
+        t4cTestedPost <- nrow(subset(postData, Tier4c == input$t4cD | Tier4c == input$t4cND))
+        
+        # num of Tier 4c detected samples
+        t4cPosPost <- nrow(subset(postData, Tier4c == input$t4cD))
+        
+        # Tier 4c positive rate
+        t4cPRPost <- round((t4cPosPost/t4cTestedPost * 100), 2)
+        
+        #row for Tier 4c
+        t4cTablePost<- data.frame("TierSubset" = paste0("Tier 4c", sep = ""),
+                                  "SamplesTested" = (t4cTestedPost),
+                                  "Detected" = (t4cPosPost),
+                                  "PositiveRate" = paste(t4cPRPost, "%", sep = ""),
+                                  row.names = c("                       "))
+        
+        return(t4cTablePost)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4cTablePost<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4c "))
+        
+        return(t4cTablePost)
+      }
+      
+    })
+    
+    
+    
+    tier4dRowPost <- try(if("Tier4d" %in% colnames(postData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4d samples tested
+        t4dTestedPost <- nrow(subset(postData, Tier4d == input$t4dD | Tier4d == input$t4dND))
+        
+        # num of Tier 4d detected samples
+        t4dPosPost <- nrow(subset(postData, Tier4d == input$t4dD))
+        
+        # Tier 4d positive rate
+        t4dPRPost <- round((t4dPosPost/t4dTestedPost * 100), 2)
+        
+        #row for Tier 4d
+        t4dTablePost<- data.frame("TierSubset" = paste0("Tier 4d", sep = ""),
+                                  "SamplesTested" = (t4dTestedPost),
+                                  "Detected" = (t4dPosPost),
+                                  "PositiveRate" = paste(t4dPRPost, "%", sep = ""),
+                                  row.names = c("                        "))
+        
+        return(t4dTablePost)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4dTablePost<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4d "))
+        
+        return(t4dTablePost)
+      }
+      
+    })
+    
+    
+    
+    #combine all rows for each Tier
+    if("Tier1" %in% colnames(baseData)) {
+      
+      finalTierTable <- try(rbind(tier1Row(), tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
+                                  tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow(),
+                                  tier1RowBase(), tier2aRowBase(), tier2bRowBase(), tier2cRowBase(), tier2dRowBase(),
+                                  tier4aRowBase(), tier4bRowBase(), tier4cRowBase(), tier4dRowBase(),
+                                  tier1RowPost(), tier2aRowPost(), tier2bRowPost(), tier2cRowPost(), tier2dRowPost(),
+                                  tier4aRowPost(), tier4bRowPost(), tier4cRowPost(), tier4dRowPost()))
+      
+      #drop rows that do not have statistics (they do not appear in the dataset)  
+      subset(finalTierTable, SamplesTested != "NA")
+      
+    } else {
+      
       altFinalTierTable <- try(rbind(tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
-                                     tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
-
+                                     tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow(),
+                                     tier2aRowBase(), tier2bRowBase(), tier2cRowBase(), tier2dRowBase(),
+                                     tier4aRowBase(), tier4bRowBase(), tier4cRowBase(), tier4dRowBase(),
+                                     tier2aRowPost(), tier2bRowPost(), tier2cRowPost(), tier2dRowPost(),
+                                     tier4aRowPost(), tier4bRowPost(), tier4cRowPost(), tier4dRowPost()))
+      
       #drop rows that do not have statistics (they do not appear in the dataset)
       subset(altFinalTierTable, SamplesTested != "NA")
-
-    }
       
-    # finalTierTable <- rbind(tier1Row(), tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(), tier4aRow(), tier4bRow(),
-    #                         tier4cRow(), tier4dRow())
-    # finalTierTable
+    }
     
     
     
