@@ -935,7 +935,7 @@ server <- function(input, output, session) {
                              "SamplesTested" = (t1Tested),
                              "Detected" = (t1Pos),
                              "PositiveRate" = paste(t1PR, "%", sep = ""),
-                             row.names = c("Total"))
+                             row.names = c(" "))
         
         return(t1Table)
       }
@@ -980,7 +980,7 @@ server <- function(input, output, session) {
                               "SamplesTested" = (t2aTested),
                               "Detected" = (t2aPos),
                               "PositiveRate" = paste(t2aPR, "%", sep = ""),
-                              row.names = c(" "))
+                              row.names = c("  "))
         
         return(t2aTable)
       }
@@ -1025,7 +1025,7 @@ server <- function(input, output, session) {
                               "SamplesTested" = (t2bTested),
                               "Detected" = (t2bPos),
                               "PositiveRate" = paste(t2bPR, "%", sep = ""),
-                              row.names = c("  "))
+                              row.names = c("   "))
         
         return(t2bTable)
       }
@@ -1070,7 +1070,7 @@ server <- function(input, output, session) {
                               "SamplesTested" = (t2cTested),
                               "Detected" = (t2cPos),
                               "PositiveRate" = paste(t2cPR, "%", sep = ""),
-                              row.names = c("   "))
+                              row.names = c("    "))
         
         return(t2cTable)
       }
@@ -1115,7 +1115,7 @@ server <- function(input, output, session) {
                               "SamplesTested" = (t2dTested),
                               "Detected" = (t2dPos),
                               "PositiveRate" = paste(t2dPR, "%", sep = ""),
-                              row.names = c("    "))
+                              row.names = c("     "))
         
         return(t2dTable)
       }
@@ -1160,7 +1160,7 @@ server <- function(input, output, session) {
                               "SamplesTested" = (t4aTested),
                               "Detected" = (t4aPos),
                               "PositiveRate" = paste(t4aPR, "%", sep = ""),
-                              row.names = c("     "))
+                              row.names = c("      "))
         
         return(t4aTable)
       }
@@ -1205,7 +1205,7 @@ server <- function(input, output, session) {
                               "SamplesTested" = (t4bTested),
                               "Detected" = (t4bPos),
                               "PositiveRate" = paste(t4bPR, "%", sep = ""),
-                              row.names = c("      "))
+                              row.names = c("       "))
         
         return(t4bTable)
       }
@@ -1250,7 +1250,7 @@ server <- function(input, output, session) {
                               "SamplesTested" = (t4cTested),
                               "Detected" = (t4cPos),
                               "PositiveRate" = paste(t4cPR, "%", sep = ""),
-                              row.names = c("       "))
+                              row.names = c("        "))
         
         return(t4cTable)
       }
@@ -1295,7 +1295,7 @@ server <- function(input, output, session) {
                               "SamplesTested" = (t4dTested),
                               "Detected" = (t4dPos),
                               "PositiveRate" = paste(t4dPR, "%", sep = ""),
-                              row.names = c("        "))
+                              row.names = c("         "))
         
         return(t4dTable)
       }
@@ -1361,7 +1361,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t1TestedBase),
                                   "Detected" = (t1PosBase),
                                   "PositiveRate" = paste(t1PRBase, "%", sep = ""),
-                                  row.names = c("Baseline"))
+                                  row.names = c("          "))
         
         return(t1TableBase)
       }
@@ -1402,7 +1402,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t2aTestedBase),
                                   "Detected" = (t2aPosBase),
                                   "PositiveRate" = paste(t2aPRBase, "%", sep = ""),
-                                  row.names = c("         "))
+                                  row.names = c("           "))
         
         return(t2aTableBase)
       }
@@ -1443,7 +1443,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t2bTestedBase),
                                   "Detected" = (t2bPosBase),
                                   "PositiveRate" = paste(t2bPRBase, "%", sep = ""),
-                                  row.names = c("          "))
+                                  row.names = c("            "))
         
         return(t2bTableBase)
       }
@@ -1484,7 +1484,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t2cTestedBase),
                                   "Detected" = (t2cPosBase),
                                   "PositiveRate" = paste(t2cPRBase, "%", sep = ""),
-                                  row.names = c("           "))
+                                  row.names = c("             "))
         
         return(t2cTableBase)
       }
@@ -1525,7 +1525,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t2dTestedBase),
                                   "Detected" = (t2dPosBase),
                                   "PositiveRate" = paste(t2dPRBase, "%", sep = ""),
-                                  row.names = c("            "))
+                                  row.names = c("              "))
         
         return(t2dTableBase)
       }
@@ -1566,7 +1566,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t4aTestedBase),
                                   "Detected" = (t4aPosBase),
                                   "PositiveRate" = paste(t4aPRBase, "%", sep = ""),
-                                  row.names = c("             "))
+                                  row.names = c("               "))
         
         return(t4aTableBase)
       }
@@ -1607,7 +1607,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t4bTestedBase),
                                   "Detected" = (t4bPosBase),
                                   "PositiveRate" = paste(t4bPRBase, "%", sep = ""),
-                                  row.names = c("              "))
+                                  row.names = c("                "))
         
         return(t4bTableBase)
       }
@@ -1648,7 +1648,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t4cTestedBase),
                                   "Detected" = (t4cPosBase),
                                   "PositiveRate" = paste(t4cPRBase, "%", sep = ""),
-                                  row.names = c("               "))
+                                  row.names = c("                 "))
         
         return(t4cTableBase)
       }
@@ -1689,7 +1689,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t4dTestedBase),
                                   "Detected" = (t4dPosBase),
                                   "PositiveRate" = paste(t4dPRBase, "%", sep = ""),
-                                  row.names = c("                "))
+                                  row.names = c("                  "))
         
         return(t4dTableBase)
       }
@@ -1732,7 +1732,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t1TestedPost),
                                   "Detected" = (t1PosPost),
                                   "PositiveRate" = paste(t1PRPost, "%", sep = ""),
-                                  row.names = c("Post-Baseline"))
+                                  row.names = c("                    "))
         
         return(t1TablePost)
       }
@@ -1773,7 +1773,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t2aTestedPost),
                                   "Detected" = (t2aPosPost),
                                   "PositiveRate" = paste(t2aPRPost, "%", sep = ""),
-                                  row.names = c("                 "))
+                                  row.names = c("                     "))
         
         return(t2aTablePost)
       }
@@ -1814,7 +1814,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t2bTestedPost),
                                   "Detected" = (t2bPosPost),
                                   "PositiveRate" = paste(t2bPRPost, "%", sep = ""),
-                                  row.names = c("                  "))
+                                  row.names = c("                      "))
         
         return(t2bTablePost)
       }
@@ -1855,7 +1855,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t2cTestedPost),
                                   "Detected" = (t2cPosPost),
                                   "PositiveRate" = paste(t2cPRPost, "%", sep = ""),
-                                  row.names = c("                   "))
+                                  row.names = c("                       "))
         
         return(t2cTablePost)
       }
@@ -1896,7 +1896,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t2dTestedPost),
                                   "Detected" = (t2dPosPost),
                                   "PositiveRate" = paste(t2dPRPost, "%", sep = ""),
-                                  row.names = c("                    "))
+                                  row.names = c("                        "))
         
         return(t2dTablePost)
       }
@@ -1937,7 +1937,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t4aTestedPost),
                                   "Detected" = (t4aPosPost),
                                   "PositiveRate" = paste(t4aPRPost, "%", sep = ""),
-                                  row.names = c("                     "))
+                                  row.names = c("                         "))
         
         return(t4aTablePost)
       }
@@ -1978,7 +1978,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t4bTestedPost),
                                   "Detected" = (t4bPosPost),
                                   "PositiveRate" = paste(t4bPRPost, "%", sep = ""),
-                                  row.names = c("                      "))
+                                  row.names = c("                          "))
         
         return(t4bTablePost)
       }
@@ -2019,7 +2019,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t4cTestedPost),
                                   "Detected" = (t4cPosPost),
                                   "PositiveRate" = paste(t4cPRPost, "%", sep = ""),
-                                  row.names = c("                       "))
+                                  row.names = c("                           "))
         
         return(t4cTablePost)
       }
@@ -2060,7 +2060,7 @@ server <- function(input, output, session) {
                                   "SamplesTested" = (t4dTestedPost),
                                   "Detected" = (t4dPosPost),
                                   "PositiveRate" = paste(t4dPRPost, "%", sep = ""),
-                                  row.names = c("                        "))
+                                  row.names = c("                            "))
         
         return(t4dTablePost)
       }
@@ -2083,36 +2083,81 @@ server <- function(input, output, session) {
     
     
     
+    #row for Total
+    totalRow <- function() {
+      
+      #dummy row with NAs
+      totalPlaceholder <- data.frame("TierSubset" = (" "),
+                                     "SamplesTested" = (" "),
+                                     "Detected" = (" "),
+                                     "PositiveRate" = (" "),
+                                     row.names = c("Total"))
+      
+      return(totalPlaceholder)
+    }
+    
+    
+    
+    #row for Baseline
+    BLRow <- function() {
+      
+      #dummy row with NAs
+      BLPlaceholder <- data.frame("TierSubset" = (" "),
+                                  "SamplesTested" = (" "),
+                                  "Detected" = (" "),
+                                  "PositiveRate" = (" "),
+                                  row.names = c("Baseline"))
+      
+      return(BLPlaceholder)
+    }
+    
+    #row for Baseline
+    PostBLRow <- function() {
+      
+      #dummy row with NAs
+      PostBLPlaceholder <- data.frame("TierSubset" = (" "),
+                                      "SamplesTested" = (" "),
+                                      "Detected" = (" "),
+                                      "PositiveRate" = (" "),
+                                      row.names = c("Post-Baseline"))
+      
+      return(PostBLPlaceholder)
+    }
+    
+    
+    
     #combine all rows for each Tier
     if("Tier1" %in% colnames(baseData)) {
       
       finalTierTable <- try(rbind(tier1Row(), tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
                                   tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow(),
-                                  tier1RowBase(), tier2aRowBase(), tier2bRowBase(), tier2cRowBase(), tier2dRowBase(),
+                                  BLRow(), tier1RowBase(), tier2aRowBase(), tier2bRowBase(), tier2cRowBase(), tier2dRowBase(),
                                   tier4aRowBase(), tier4bRowBase(), tier4cRowBase(), tier4dRowBase(),
-                                  tier1RowPost(), tier2aRowPost(), tier2bRowPost(), tier2cRowPost(), tier2dRowPost(),
+                                  PostBLRow(), tier1RowPost(), tier2aRowPost(), tier2bRowPost(), tier2cRowPost(), tier2dRowPost(),
                                   tier4aRowPost(), tier4bRowPost(), tier4cRowPost(), tier4dRowPost()))
       
       #drop rows that do not have statistics (they do not appear in the dataset)  
-      subset(finalTierTable, SamplesTested != "NA")
+      finalTierTable<- subset(finalTierTable, SamplesTested != "NA")
+      rbind(totalRow(), finalTierTable)
       
     } else {
       
       altFinalTierTable <- try(rbind(tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
                                      tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow(),
-                                     tier2aRowBase(), tier2bRowBase(), tier2cRowBase(), tier2dRowBase(),
+                                     BLRow(), tier2aRowBase(), tier2bRowBase(), tier2cRowBase(), tier2dRowBase(),
                                      tier4aRowBase(), tier4bRowBase(), tier4cRowBase(), tier4dRowBase(),
-                                     tier2aRowPost(), tier2bRowPost(), tier2cRowPost(), tier2dRowPost(),
+                                     PostBLRow(), tier2aRowPost(), tier2bRowPost(), tier2cRowPost(), tier2dRowPost(),
                                      tier4aRowPost(), tier4bRowPost(), tier4cRowPost(), tier4dRowPost()))
       
       #drop rows that do not have statistics (they do not appear in the dataset)
-      subset(altFinalTierTable, SamplesTested != "NA")
+      altFinalTierTable <- subset(altFinalTierTable, SamplesTested != "NA")
+      rbind(totalRow(), altFinalTierTable)
       
     }
     
     
     
-  }, options = list(dom = 't', pageLength = 30, ordering = FALSE)
+  }, options = list(dom = 't', pageLength = 50, ordering = FALSE)
   ) 
   #end Tier table results
   
@@ -2125,9 +2170,8 @@ server <- function(input, output, session) {
     numEvalSubjects <- nrow(titerPivot())
     
     # percent of subjects evaluable for TE ADA
-    baseRate <- (numEvalSubjects/numEvalSubjects) * 100
-    baseRate <- round(baseRate, 2)
-    
+    baseRate <- round((numEvalSubjects/numEvalSubjects * 100), 2)
+
     
     
     # num of subjects with positive baselines
@@ -2142,8 +2186,7 @@ server <- function(input, output, session) {
     }
     
     # percent of subjects positive at baseline
-    basePosRate <- (numBLPosSubjects/numEvalSubjects) * 100
-    basePosRate <- round(basePosRate, 2)
+    basePosRate <- round((numBLPosSubjects/numEvalSubjects * 100), 2)
     
     
     
@@ -2159,8 +2202,7 @@ server <- function(input, output, session) {
     }
     
     # percent of subjects that are treatment emergent
-    teRate <- (numTESubjects/numEvalSubjects) * 100
-    teRate <- round(teRate, 2)
+    teRate <- round((numTESubjects/numEvalSubjects * 100), 2)
     
     
     
@@ -2168,8 +2210,7 @@ server <- function(input, output, session) {
     numTISubjects <- nrow(subset(treatEmerFunc(), Baseline == 0))
     
     # percent of subjects that are treatment induced
-    tiRate <- (numTISubjects/numEvalSubjects) * 100
-    tiRate <- round(tiRate, 2)
+    tiRate <- round((numTISubjects/numEvalSubjects * 100), 2)
     
     
     
@@ -2177,8 +2218,7 @@ server <- function(input, output, session) {
     numTBSubjects <- nrow(subset(treatEmerFunc(), Baseline != 0))
     
     # percent of subjects that are treatment boosted
-    tbRate <- (numTBSubjects/numEvalSubjects) * 100
-    tbRate <- round(tbRate, 2)
+    tbRate <- round((numTBSubjects/numEvalSubjects * 100), 2)
     
     
     
