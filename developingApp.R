@@ -63,16 +63,16 @@ ui <- shinyUI(fluidPage(
       textInput("baselineVisits", label = "Complete the fields below:", placeholder = "Enter 'Baseline Visit' value"),
       textInput("t1D", label = NULL, placeholder = "Enter Tier 1 'Detected' value"),
       textInput("t1ND", label = NULL, placeholder = "Enter Tier 1 'NOT Detected' value"),
-      textInput("t2aD", label = NULL, placeholder = "Enter Tier 2(a) 'Detected' value"),
-      textInput("t2aND", label = NULL, placeholder = "Enter Tier 2(a) 'NOT Detected' value"),
+      textInput("t2aD", label = NULL, placeholder = "Enter Tier 2 'Detected' value"),
+      textInput("t2aND", label = NULL, placeholder = "Enter Tier 2 'NOT Detected' value"),
       textInput("t2bD", label = NULL, placeholder = "Enter Tier 2b 'Detected' value"),
       textInput("t2bND", label = NULL, placeholder = "Enter Tier 2b 'NOT Detected' value"),
       textInput("t2cD", label = NULL, placeholder = "Enter Tier 2c 'Detected' value"),
       textInput("t2cND", label = NULL, placeholder = "Enter Tier 2c 'NOT Detected' value"),
       textInput("t2dD", label = NULL, placeholder = "Enter Tier 2d 'Detected' value"),
       textInput("t2dND", label = NULL, placeholder = "Enter Tier 2d 'NOT Detected' value"),
-      textInput("t4aD", label = NULL, placeholder = "Enter Tier 4(a) 'Detected' value"),
-      textInput("t4aND", label = NULL, placeholder = "Enter Tier 4(a) 'NOT Detected' value"),
+      textInput("t4aD", label = NULL, placeholder = "Enter Tier 4 'Detected' value"),
+      textInput("t4aND", label = NULL, placeholder = "Enter Tier 4 'NOT Detected' value"),
       textInput("t4bD", label = NULL, placeholder = "Enter Tier 4b 'Detected' value"),
       textInput("t4bND", label = NULL, placeholder = "Enter Tier 4b 'NOT Detected' value"),
       textInput("t4cD", label = NULL, placeholder = "Enter Tier 4c 'Detected' value"),
@@ -80,11 +80,17 @@ ui <- shinyUI(fluidPage(
       textInput("t4dD", label = NULL, placeholder = "Enter Tier 4d 'Detected' value"),
       textInput("t4dND", label = NULL, placeholder = "Enter Tier 4d 'NOT Detected' value"),
       
-      strong("If applicable, include additional columns:"),
+      strong("Select all columns that appear in the dataset:"),
       
       br(),
       
       #input: checkboxes to include Tier 2 columns
+      prettyCheckbox("checkT1", "Tier 1", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      
+      br(),
+      
+      #input: checkboxes to include Tier 2 columns
+      prettyCheckbox("checkT2A", "Tier 2", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       prettyCheckbox("checkT2B", "Tier 2b", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       prettyCheckbox("checkT2C", "Tier 2c", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       prettyCheckbox("checkT2D", "Tier 2d", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
@@ -92,7 +98,7 @@ ui <- shinyUI(fluidPage(
       br(),
       
       #input: checkboxes to include Tier 4 columns
-      prettyCheckbox("checkT4A", "Tier 4(a)", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      prettyCheckbox("checkT4A", "Tier 4", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       prettyCheckbox("checkT4B", "Tier 4b", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       prettyCheckbox("checkT4C", "Tier 4c", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       prettyCheckbox("checkT4D", "Tier 4d", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
@@ -177,6 +183,8 @@ server <- function(input, output, session) {
     
     rawData <- originalData()
     
+    # rawData <- data.frame(lapply(rawData, trimws), stringsAsFactors = FALSE)
+    
     rawData$Tier3 <- ifelse(substring(rawData$Tier3, 1, 2) == "1:",
                             as.numeric(as.character(substring(rawData$Tier3, 3))),
                             as.numeric(as.character(rawData$Tier3)))
@@ -237,10 +245,10 @@ server <- function(input, output, session) {
     
     #prepare Tier3 values to be populated in the table
     summRawData <- summarise(groupRawData,
-                             sumTiter = sum(Tier3))
+                             maxTiter = max(Tier3))
     
     #transform the rawData table to a pivot table, using Subjects as rows, Visits as columns, Tier3 values as cells
-    rawDataTrans <- dcast(summRawData, Subject ~ Visit, value.var = "sumTiter")
+    rawDataTrans <- dcast(summRawData, Subject ~ Visit, value.var = "maxTiter")
     
     #gets each unique visit code and closely reorganizes them in chronological order 
     nams <- as.character(unique(myData()$Visit)) 
@@ -410,6 +418,24 @@ server <- function(input, output, session) {
     return(unEvalTable)
   }
   #end global functions for table views
+  
+  
+  
+  #display or hide Tier 1 input fields based on user checking the box
+  observe({
+    toggle("t1D", condition = input$checkT1, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t1ND", condition = input$checkT1, anim = TRUE, time = 0.5, animType = "slide")
+  })
+  
+  
+  
+  #display or hide Tier 2a input fields based on user checking the box
+  #display or hide Tier 2b checkbox based on user checking the box
+  observe({
+    toggle("t2aD", condition = input$checkT2A, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t2aND", condition = input$checkT2A, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("checkT2B", condition = input$checkT2A, anim = TRUE, time = 0.5, animType = "slide")
+  })
   
   
   
@@ -1319,27 +1345,6 @@ server <- function(input, output, session) {
     })
     
     
-    # #combine all rows for each Tier
-    # if("Tier1" %in% colnames(statsData)) {
-    #   
-    #   finalTierTable <- try(rbind(tier1Row(), tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
-    #                               tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
-    #   
-    #   #drop rows that do not have statistics (they do not appear in the dataset)  
-    #   subset(finalTierTable, SamplesTested != "NA")
-    #   
-    # } else {
-    #   
-    #   altFinalTierTable <- try(rbind(tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
-    #                                  tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow()))
-    #   
-    #   #drop rows that do not have statistics (they do not appear in the dataset)  
-    #   subset(altFinalTierTable, SamplesTested != "NA")
-    #   
-    # }
-    
-    
-    
     
     baseData <- baselineFunc()
     
@@ -2158,7 +2163,7 @@ server <- function(input, output, session) {
     
     
   }, options = list(dom = 't', pageLength = 50, ordering = FALSE)
-  ) 
+  )
   #end Tier table results
   
   
@@ -2171,7 +2176,7 @@ server <- function(input, output, session) {
     
     # percent of subjects evaluable for TE ADA
     baseRate <- round((numEvalSubjects/numEvalSubjects * 100), 2)
-
+    
     
     
     # num of subjects with positive baselines
