@@ -183,8 +183,6 @@ server <- function(input, output, session) {
     
     rawData <- originalData()
     
-    # rawData <- data.frame(lapply(rawData, trimws), stringsAsFactors = FALSE)
-    
     rawData$Tier3 <- ifelse(substring(rawData$Tier3, 1, 2) == "1:",
                             as.numeric(as.character(substring(rawData$Tier3, 3))),
                             as.numeric(as.character(rawData$Tier3)))
