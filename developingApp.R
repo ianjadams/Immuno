@@ -900,16 +900,16 @@ server <- function(input, output, session) {
     plot1 <- ggplot(countTiter, aes(x = Titer, y = Count)) + 
       geom_bar(stat = "identity", color = "#337ab7", size = 0.6, fill = "#18bc9c", alpha = 0.7) + 
       geom_text(aes(label = Count), vjust = -0.3, color = "#2c3e50", size = 4.5) + 
-      ggtitle("Frequency of Highest Titer (Post-BL) per Subject*") + 
-      theme_minimal()
+      ggtitle("Frequency of Highest Titer (Post-BL) per Subject*")
     
     
     plot1 + theme(
+      axis.ticks.length = unit(10, "pt"),
       plot.title = element_text(color = "#2c3e50", size = 24, face = "bold"),
       axis.title.x = element_text(color = "#2c3e50", size = 20, face = "bold"),
       axis.title.y = element_text(color = "#2c3e50", size = 20, face = "bold"),
-      axis.text.x = element_text(size = 14),
-      axis.text.y = element_text(size = 14),
+      axis.text.x = element_text(size = 14, angle = 45, hjust = 1),
+      axis.text.y = element_text(size = 14, hjust = 1),
       axis.line = element_line(color = "#337ab7", size = 1, linetype = "solid"),
       panel.background = element_rect(fill = "#cccccc", color = "#cccccc"),
       panel.grid.major = element_blank(), 
