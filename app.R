@@ -59,27 +59,6 @@ ui <- shinyUI(fluidPage(
                          'text/comma-separated-values,text/plain',
                          '.csv')),
       
-      #input: text input for specifying values
-      textInput("baselineVisits", label = "Complete the fields below:", placeholder = "Enter 'Baseline Visit' value"),
-      textInput("t1D", label = NULL, placeholder = "Enter Tier 1 'Detected' value"),
-      textInput("t1ND", label = NULL, placeholder = "Enter Tier 1 'NOT Detected' value"),
-      textInput("t2aD", label = NULL, placeholder = "Enter Tier 2 'Detected' value"),
-      textInput("t2aND", label = NULL, placeholder = "Enter Tier 2 'NOT Detected' value"),
-      textInput("t2bD", label = NULL, placeholder = "Enter Tier 2b 'Detected' value"),
-      textInput("t2bND", label = NULL, placeholder = "Enter Tier 2b 'NOT Detected' value"),
-      textInput("t2cD", label = NULL, placeholder = "Enter Tier 2c 'Detected' value"),
-      textInput("t2cND", label = NULL, placeholder = "Enter Tier 2c 'NOT Detected' value"),
-      textInput("t2dD", label = NULL, placeholder = "Enter Tier 2d 'Detected' value"),
-      textInput("t2dND", label = NULL, placeholder = "Enter Tier 2d 'NOT Detected' value"),
-      textInput("t4aD", label = NULL, placeholder = "Enter Tier 4 'Detected' value"),
-      textInput("t4aND", label = NULL, placeholder = "Enter Tier 4 'NOT Detected' value"),
-      textInput("t4bD", label = NULL, placeholder = "Enter Tier 4b 'Detected' value"),
-      textInput("t4bND", label = NULL, placeholder = "Enter Tier 4b 'NOT Detected' value"),
-      textInput("t4cD", label = NULL, placeholder = "Enter Tier 4c 'Detected' value"),
-      textInput("t4cND", label = NULL, placeholder = "Enter Tier 4c 'NOT Detected' value"),
-      textInput("t4dD", label = NULL, placeholder = "Enter Tier 4d 'Detected' value"),
-      textInput("t4dND", label = NULL, placeholder = "Enter Tier 4d 'NOT Detected' value"),
-      
       strong("Select all columns that appear in the dataset:"),
       
       br(),
@@ -103,9 +82,30 @@ ui <- shinyUI(fluidPage(
       prettyCheckbox("checkT4C", "Tier 4c", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       prettyCheckbox("checkT4D", "Tier 4d", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       
+      #input: text input for specifying values
+      textInput("baselineVisits", label = "Complete the fields below:", placeholder = "Enter 'Baseline Visit' value"),
+      textInput("t1D", label = NULL, placeholder = "Enter Tier 1 'Detected' value"),
+      textInput("t1ND", label = NULL, placeholder = "Enter Tier 1 'NOT Detected' value"),
+      textInput("t2aD", label = NULL, placeholder = "Enter Tier 2 'Detected' value"),
+      textInput("t2aND", label = NULL, placeholder = "Enter Tier 2 'NOT Detected' value"),
+      textInput("t2bD", label = NULL, placeholder = "Enter Tier 2b 'Detected' value"),
+      textInput("t2bND", label = NULL, placeholder = "Enter Tier 2b 'NOT Detected' value"),
+      textInput("t2cD", label = NULL, placeholder = "Enter Tier 2c 'Detected' value"),
+      textInput("t2cND", label = NULL, placeholder = "Enter Tier 2c 'NOT Detected' value"),
+      textInput("t2dD", label = NULL, placeholder = "Enter Tier 2d 'Detected' value"),
+      textInput("t2dND", label = NULL, placeholder = "Enter Tier 2d 'NOT Detected' value"),
+      textInput("t4aD", label = NULL, placeholder = "Enter Tier 4 'Detected' value"),
+      textInput("t4aND", label = NULL, placeholder = "Enter Tier 4 'NOT Detected' value"),
+      textInput("t4bD", label = NULL, placeholder = "Enter Tier 4b 'Detected' value"),
+      textInput("t4bND", label = NULL, placeholder = "Enter Tier 4b 'NOT Detected' value"),
+      textInput("t4cD", label = NULL, placeholder = "Enter Tier 4c 'Detected' value"),
+      textInput("t4cND", label = NULL, placeholder = "Enter Tier 4c 'NOT Detected' value"),
+      textInput("t4dD", label = NULL, placeholder = "Enter Tier 4d 'Detected' value"),
+      textInput("t4dND", label = NULL, placeholder = "Enter Tier 4d 'NOT Detected' value"),
+      
       
       #input: MRD value field
-      numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 100000000),
+      numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 1000000000),
       verbatimTextOutput('mrdOut'),
       
       
