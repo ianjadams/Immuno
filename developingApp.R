@@ -1,6 +1,7 @@
 library(dplyr)
 library(DT)
 library(ggplot2)
+library(plotly)
 library(readxl)
 library(reshape2)
 library(shiny)
@@ -59,27 +60,6 @@ ui <- shinyUI(fluidPage(
                          'text/comma-separated-values,text/plain',
                          '.csv')),
       
-      #input: text input for specifying values
-      textInput("baselineVisits", label = "Complete the fields below:", placeholder = "Enter 'Baseline Visit' value"),
-      textInput("t1D", label = NULL, placeholder = "Enter Tier 1 'Detected' value"),
-      textInput("t1ND", label = NULL, placeholder = "Enter Tier 1 'NOT Detected' value"),
-      textInput("t2aD", label = NULL, placeholder = "Enter Tier 2 'Detected' value"),
-      textInput("t2aND", label = NULL, placeholder = "Enter Tier 2 'NOT Detected' value"),
-      textInput("t2bD", label = NULL, placeholder = "Enter Tier 2b 'Detected' value"),
-      textInput("t2bND", label = NULL, placeholder = "Enter Tier 2b 'NOT Detected' value"),
-      textInput("t2cD", label = NULL, placeholder = "Enter Tier 2c 'Detected' value"),
-      textInput("t2cND", label = NULL, placeholder = "Enter Tier 2c 'NOT Detected' value"),
-      textInput("t2dD", label = NULL, placeholder = "Enter Tier 2d 'Detected' value"),
-      textInput("t2dND", label = NULL, placeholder = "Enter Tier 2d 'NOT Detected' value"),
-      textInput("t4aD", label = NULL, placeholder = "Enter Tier 4 'Detected' value"),
-      textInput("t4aND", label = NULL, placeholder = "Enter Tier 4 'NOT Detected' value"),
-      textInput("t4bD", label = NULL, placeholder = "Enter Tier 4b 'Detected' value"),
-      textInput("t4bND", label = NULL, placeholder = "Enter Tier 4b 'NOT Detected' value"),
-      textInput("t4cD", label = NULL, placeholder = "Enter Tier 4c 'Detected' value"),
-      textInput("t4cND", label = NULL, placeholder = "Enter Tier 4c 'NOT Detected' value"),
-      textInput("t4dD", label = NULL, placeholder = "Enter Tier 4d 'Detected' value"),
-      textInput("t4dND", label = NULL, placeholder = "Enter Tier 4d 'NOT Detected' value"),
-      
       strong("Select all columns that appear in the dataset:"),
       
       br(),
@@ -103,9 +83,30 @@ ui <- shinyUI(fluidPage(
       prettyCheckbox("checkT4C", "Tier 4c", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       prettyCheckbox("checkT4D", "Tier 4d", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       
+      #input: text input for specifying values
+      textInput("baselineVisits", label = "Complete the fields below:", placeholder = "Enter 'Baseline Visit' value"),
+      textInput("t1D", label = NULL, placeholder = "Enter Tier 1 'Detected' value"),
+      textInput("t1ND", label = NULL, placeholder = "Enter Tier 1 'NOT Detected' value"),
+      textInput("t2aD", label = NULL, placeholder = "Enter Tier 2 'Detected' value"),
+      textInput("t2aND", label = NULL, placeholder = "Enter Tier 2 'NOT Detected' value"),
+      textInput("t2bD", label = NULL, placeholder = "Enter Tier 2b 'Detected' value"),
+      textInput("t2bND", label = NULL, placeholder = "Enter Tier 2b 'NOT Detected' value"),
+      textInput("t2cD", label = NULL, placeholder = "Enter Tier 2c 'Detected' value"),
+      textInput("t2cND", label = NULL, placeholder = "Enter Tier 2c 'NOT Detected' value"),
+      textInput("t2dD", label = NULL, placeholder = "Enter Tier 2d 'Detected' value"),
+      textInput("t2dND", label = NULL, placeholder = "Enter Tier 2d 'NOT Detected' value"),
+      textInput("t4aD", label = NULL, placeholder = "Enter Tier 4 'Detected' value"),
+      textInput("t4aND", label = NULL, placeholder = "Enter Tier 4 'NOT Detected' value"),
+      textInput("t4bD", label = NULL, placeholder = "Enter Tier 4b 'Detected' value"),
+      textInput("t4bND", label = NULL, placeholder = "Enter Tier 4b 'NOT Detected' value"),
+      textInput("t4cD", label = NULL, placeholder = "Enter Tier 4c 'Detected' value"),
+      textInput("t4cND", label = NULL, placeholder = "Enter Tier 4c 'NOT Detected' value"),
+      textInput("t4dD", label = NULL, placeholder = "Enter Tier 4d 'Detected' value"),
+      textInput("t4dND", label = NULL, placeholder = "Enter Tier 4d 'NOT Detected' value"),
+      
       
       #input: MRD value field
-      numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 100000000),
+      numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 1000000000),
       verbatimTextOutput('mrdOut'),
       
       
@@ -136,12 +137,17 @@ ui <- shinyUI(fluidPage(
                            br(),
                            tableOutput('premises')),
                   tabPanel("Plot", plotOutput('plot'),
-                           verbatimTextOutput('sampleSize')),
+                           verbatimTextOutput('sampleSize'),
+                           br(),
+                           varSelectInput("subs", "Select Subject:", character(0)),
+                           plotlyOutput('plot2'),
+                           verbatimTextOutput('visits')),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
                            br(),
                            DT::dataTableOutput('summary2'),
                            br(),
-                           DT::dataTableOutput('summary3')),
+                           DT::dataTableOutput('summary3'),
+                           br()),
                   tabPanel("Help", downloadButton("downloadGuide", "Documentation"),
                            uiOutput('help'),
                            br(),
@@ -254,11 +260,15 @@ server <- function(input, output, session) {
     rawDataTrans[, sort(nums)] <- rawDataTrans[, nams]
     names(rawDataTrans)[sort(nums)] <- nams
     
-    #get max titer of each subject after baseline
-    maxTiter <- apply(rawDataTrans[-c(1:2)], 1, max, na.rm=TRUE)
+    subsetRawDataTrans <- try(if("Baseline" %in% colnames(rawDataTrans)) {
+      
+      newTable <- subset(rawDataTrans, select = -c(Subject, Baseline))
+      maxTiter <- apply(newTable, 1, max, na.rm=TRUE)
+      bindedTiter <- cbind(maxTiter, rawDataTrans)
+      
+    })
     
-    #append maxTiter to first column of pivot table
-    bindedTiter <- cbind(maxTiter, rawDataTrans)
+    return(subsetRawDataTrans)
     
   }
   
@@ -321,6 +331,7 @@ server <- function(input, output, session) {
     if (length(input$col) == 0) return(pivotTableFunc())
     #arranges the table based on order user selects visit codes
     newPivTable <- pivotTableFunc() %>% dplyr::select(!!!input$col)
+    print(colnames(newPivTable))
     return(newPivTable)
     
   }
@@ -434,7 +445,6 @@ server <- function(input, output, session) {
     toggle("t2aND", condition = input$checkT2A, anim = TRUE, time = 0.5, animType = "slide")
     toggle("checkT2B", condition = input$checkT2A, anim = TRUE, time = 0.5, animType = "slide")
   })
-  
   
   
   #display or hide Tier 2b input fields based on user checking the box
@@ -900,16 +910,16 @@ server <- function(input, output, session) {
     plot1 <- ggplot(countTiter, aes(x = Titer, y = Count)) + 
       geom_bar(stat = "identity", color = "#337ab7", size = 0.6, fill = "#18bc9c", alpha = 0.7) + 
       geom_text(aes(label = Count), vjust = -0.3, color = "#2c3e50", size = 4.5) + 
-      ggtitle("Frequency of Highest Titer (Post-BL) per Subject*")
+      ggtitle("Frequency of Highest Titer (Post-BL) per Subject*") + 
+      theme_minimal()
     
     
     plot1 + theme(
-      axis.ticks.length = unit(10, "pt"),
       plot.title = element_text(color = "#2c3e50", size = 24, face = "bold"),
       axis.title.x = element_text(color = "#2c3e50", size = 20, face = "bold"),
       axis.title.y = element_text(color = "#2c3e50", size = 20, face = "bold"),
-      axis.text.x = element_text(size = 14, angle = 45, hjust = 1),
-      axis.text.y = element_text(size = 14, hjust = 1),
+      axis.text.x = element_text(size = 14),
+      axis.text.y = element_text(size = 14),
       axis.line = element_line(color = "#337ab7", size = 1, linetype = "solid"),
       panel.background = element_rect(fill = "#cccccc", color = "#cccccc"),
       panel.grid.major = element_blank(), 
@@ -2253,13 +2263,16 @@ server <- function(input, output, session) {
     numUnEvalSubjects <- nrow(pivotTableFunc()) - nrow(titerPivot())
     
     # max titer of treatment emergence table
-    highTiter <- max(treatEmerFunc()$maxTiter)
+    highBLTiter <- max(baselineFunc()$Tier3)
+    
+    # max titer of treatment emergence table
+    highPostBLTiter <- max(postBaselineFunc()$Tier3)
     
     
     
     # output table for General Stats results
-    data.frame("Sort" = c(numAllSubjects, numUnEvalSubjects, highTiter),
-               row.names = c("Total Unique Subjects", "Unevaluated Subjects", "Highest Post-Baseline Titer"))
+    data.frame("Sort" = c(numAllSubjects, numUnEvalSubjects, highBLTiter, highPostBLTiter),
+               row.names = c("Total Unique Subjects", "Unevaluated Subjects", "Highest Baseline Titer", "Highest Post-Baseline Titer"))
     
     
     
@@ -2417,6 +2430,76 @@ server <- function(input, output, session) {
   })
   #end help instructions
   #end "Help" tab
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  #begin "Plot" tab
+  
+  #gets the unique visit codes once the original dataset has been loaded
+  observeEvent(originalData(), {
+    updateSelectInput(session, "subs", choices = distinct(myData(), Subject))
+  })
+  
+  
+  
+  output$plot2 <- renderPlotly({
+    
+    #subset graphical data by subject
+    currentSubject <- as.data.frame(subset(myData(), Subject == input$subs))
+    currentSubject[is.na(currentSubject)] <- 0
+    
+    #reorganize x-axis by user-input order
+    targetOrder <- as.data.frame(colnames(pivTableView()))
+    names(targetOrder) <- c("Visit")
+    cat("USER ORDER BELOW");
+    print(targetOrder)
+    
+    currentVisits <- left_join(targetOrder, currentSubject, by = "Visit")
+    currentVisits <- subset(currentVisits, !is.na(Subject))
+    cat("SUBJECT VISITS BELOW");
+    print(currentVisits)
+    
+    visitReorder <- targetOrder[match(targetOrder, currentVisits$Visit),]
+    visitReorder <- targetOrder[match(targetOrder, currentVisits$Visit),]
+    cat("MATCHED VISIT ORDER");
+    print(visitReorder)
+    
+
+    
+    x <- c(currentVisits$Visit)
+    y <- c(currentSubject$Tier3)
+    data <- data.frame(x, y)
+    
+    p <- plot_ly(data, x = ~x, y = ~y, type = 'scatter', mode = 'lines+markers') %>%
+      layout(title = "Titers by Subject", xaxis = list(title = "Visit"), yaxis = list(title = "Titer"))
+    p
+    
+    # ggplot(data=currentSubject, aes(x=names(pivotTableFunc()), y=Tier3, group=1)) +
+    #        geom_line()
+    
+  })
+  
+  
+  #begin "sample size" output field
+  output$visits <- renderText({
+    
+    paste(colnames(pivTableView()), ",", sep="")
+    
+  })
+  
+  
+  
+  
+  
+  
+  
   
   
   
