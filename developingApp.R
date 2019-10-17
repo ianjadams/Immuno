@@ -50,7 +50,7 @@ ui <- shinyUI(fluidPage(
   ),
   
   useShinyjs(),
-  headerPanel(title = ("LEM's Immuno Analysis Now for Vendor Data"),
+  headerPanel(title = ("LEM's Immuno Analysis Now"),
               tags$head(tags$link(rel = "icon", type = "image/png", href = "antibody.ico"),
                         windowTitle = "Immuno_Analysis_Now")),
   sidebarLayout(
@@ -138,10 +138,11 @@ ui <- shinyUI(fluidPage(
                            tableOutput('premises')),
                   tabPanel("Plot", plotOutput('plot'),
                            verbatimTextOutput('sampleSize'),
-                           br(),
-                           varSelectInput("subs", "Select Subject:", character(0)),
-                           plotlyOutput('plot2'),
-                           verbatimTextOutput('visits')),
+                           br()),
+                           # varSelectInput("subs", "Select Subject:", character(0)),
+                           # varSelectInput("vals", "Select Variable:", character(0)),
+                           # plotlyOutput('plot2'),
+                           # verbatimTextOutput('visits')),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
                            br(),
                            DT::dataTableOutput('summary2'),
@@ -910,16 +911,15 @@ server <- function(input, output, session) {
     plot1 <- ggplot(countTiter, aes(x = Titer, y = Count)) + 
       geom_bar(stat = "identity", color = "#337ab7", size = 0.6, fill = "#18bc9c", alpha = 0.7) + 
       geom_text(aes(label = Count), vjust = -0.3, color = "#2c3e50", size = 4.5) + 
-      ggtitle("Frequency of Highest Titer (Post-BL) per Subject*") + 
-      theme_minimal()
-    
+      ggtitle("Frequency of Highest Titer (Post-BL) per Subject*")
     
     plot1 + theme(
+      axis.ticks.length = unit(10, "pt"),
       plot.title = element_text(color = "#2c3e50", size = 24, face = "bold"),
       axis.title.x = element_text(color = "#2c3e50", size = 20, face = "bold"),
       axis.title.y = element_text(color = "#2c3e50", size = 20, face = "bold"),
-      axis.text.x = element_text(size = 14),
-      axis.text.y = element_text(size = 14),
+      axis.text.x = element_text(size = 14, angle = 45, hjust = 1),
+      axis.text.y = element_text(size = 14, hjust = 1),
       axis.line = element_line(color = "#337ab7", size = 1, linetype = "solid"),
       panel.background = element_rect(fill = "#cccccc", color = "#cccccc"),
       panel.grid.major = element_blank(), 
@@ -2286,8 +2286,15 @@ server <- function(input, output, session) {
   #begin "Download All Tables" button
   output$downloadData <- downloadHandler(
     
-    #define file name and dump all rows from tables into separate excel sheets
-    'appDownloadData.xlsx', content = function(file) {
+    #define the file name
+    
+    filename = function() {
+      paste(Sys.Date(), '-IAN-output.xlsx', sep="")
+    },
+    
+    #dump all rows from tables into separate excel sheets
+    content = function(file) {
+      
       these = input$contents_rows_all
       
       write.xlsx(myData(), file, sheetName="Original", row.names=FALSE, showNA = FALSE)
@@ -2298,7 +2305,6 @@ server <- function(input, output, session) {
       write.xlsx(pivTreatView(), file, sheetName="Treatment Emergent Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
       write.xlsx(pivTiterView(), file, sheetName="Titer Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
       write.xlsx(myData()[these, , drop = FALSE], file, sheetName="Search Results", append=TRUE, row.names=FALSE, showNA = FALSE)
-      
       
     })
   #end "Download All Tables" button
@@ -2442,57 +2448,64 @@ server <- function(input, output, session) {
   
   #begin "Plot" tab
   
-  #gets the unique visit codes once the original dataset has been loaded
-  observeEvent(originalData(), {
-    updateSelectInput(session, "subs", choices = distinct(myData(), Subject))
-  })
-  
-  
-  
-  output$plot2 <- renderPlotly({
-    
-    #subset graphical data by subject
-    currentSubject <- as.data.frame(subset(myData(), Subject == input$subs))
-    currentSubject[is.na(currentSubject)] <- 0
-    
-    #reorganize x-axis by user-input order
-    targetOrder <- as.data.frame(colnames(pivTableView()))
-    names(targetOrder) <- c("Visit")
-    cat("USER ORDER BELOW");
-    print(targetOrder)
-    
-    currentVisits <- left_join(targetOrder, currentSubject, by = "Visit")
-    currentVisits <- subset(currentVisits, !is.na(Subject))
-    cat("SUBJECT VISITS BELOW");
-    print(currentVisits)
-    
-    visitReorder <- targetOrder[match(targetOrder, currentVisits$Visit),]
-    visitReorder <- targetOrder[match(targetOrder, currentVisits$Visit),]
-    cat("MATCHED VISIT ORDER");
-    print(visitReorder)
-    
+  #gets the unique Subject list once the original dataset has been loaded
+  # observeEvent(originalData(), {
+  #   updateSelectInput(session, "subs", choices = distinct(myData(), Subject))
+  # })
+  # 
+  # 
+  # 
+  # #gets the unique variable list once the original dataset has been loaded
+  # observeEvent(originalData(), {
+  #   updateSelectInput(session, "vals", choices = names(myData()))
+  # })
 
-    
-    x <- c(currentVisits$Visit)
-    y <- c(currentSubject$Tier3)
-    data <- data.frame(x, y)
-    
-    p <- plot_ly(data, x = ~x, y = ~y, type = 'scatter', mode = 'lines+markers') %>%
-      layout(title = "Titers by Subject", xaxis = list(title = "Visit"), yaxis = list(title = "Titer"))
-    p
-    
-    # ggplot(data=currentSubject, aes(x=names(pivotTableFunc()), y=Tier3, group=1)) +
-    #        geom_line()
-    
-  })
+  
+  
+  # output$plot2 <- renderPlotly({
+  #   
+  #   #subset graphical data by subject
+  #   currentSubject <- as.data.frame(subset(myData(), Subject == input$subs))
+  #   currentSubject[is.na(currentSubject)] <- 0
+  #   
+  #   #reorganize x-axis by user-input order
+  #   targetOrder <- as.data.frame(colnames(pivTableView()))
+  #   names(targetOrder) <- c("Visit")
+  #   cat("USER ORDER BELOW");
+  #   print(targetOrder)
+  #   
+  #   currentVisits <- left_join(targetOrder, currentSubject, by = "Visit")
+  #   currentVisits <- subset(currentVisits, !is.na(Subject))
+  #   cat("SUBJECT VISITS BELOW");
+  #   print(currentVisits)
+  #   
+  #   visitReorder <- targetOrder[match(targetOrder, currentVisits$Visit),]
+  #   visitReorder <- targetOrder[match(targetOrder, currentVisits$Visit),]
+  #   cat("MATCHED VISIT ORDER");
+  #   print(visitReorder)
+  #   
+  # 
+  #   
+  #   x <- c(currentVisits$Visit)
+  #   y <- c(currentSubject$Tier3)
+  #   data <- data.frame(x, y)
+  #   
+  #   p <- plot_ly(data, x = ~x, y = ~y, type = 'scatter', mode = 'lines+markers') %>%
+  #     layout(title = "Titer by Subject", xaxis = list(title = "Visit"), yaxis = list(title = "Titer"))
+  #   p
+  #   
+  #   # ggplot(data=currentSubject, aes(x=names(pivotTableFunc()), y=Tier3, group=1)) +
+  #   #        geom_line()
+  #   
+  # })
   
   
   #begin "sample size" output field
-  output$visits <- renderText({
-    
-    paste(colnames(pivTableView()), ",", sep="")
-    
-  })
+  # output$visits <- renderText({
+  #   
+  #   paste(colnames(pivTableView()), ",", sep="")
+  #   
+  # })
   
   
   
