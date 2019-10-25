@@ -138,11 +138,12 @@ ui <- shinyUI(fluidPage(
                            tableOutput('premises')),
                   tabPanel("Plot", plotOutput('plot'),
                            verbatimTextOutput('sampleSize'),
-                           br()),
-                           # varSelectInput("subs", "Select Subject:", character(0)),
-                           # varSelectInput("vals", "Select Variable:", character(0)),
-                           # plotlyOutput('plot2'),
-                           # verbatimTextOutput('visits')),
+                           br(),
+                           varSelectInput("subs", "Select Subject:", character(0)),
+                           varSelectInput("var1", "Primary Variable:", character(0)),
+                           varSelectInput("var2", "Secondary Variable:", character(0)),
+                           plotOutput('plot2'),
+                           verbatimTextOutput('visits')),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
                            br(),
                            DT::dataTableOutput('summary2'),
@@ -2449,63 +2450,76 @@ server <- function(input, output, session) {
   #begin "Plot" tab
   
   #gets the unique Subject list once the original dataset has been loaded
-  # observeEvent(originalData(), {
-  #   updateSelectInput(session, "subs", choices = distinct(myData(), Subject))
-  # })
-  # 
-  # 
-  # 
-  # #gets the unique variable list once the original dataset has been loaded
-  # observeEvent(originalData(), {
-  #   updateSelectInput(session, "vals", choices = names(myData()))
-  # })
+  observeEvent(originalData(), {
+    updateSelectInput(session, "subs", choices = distinct(myData(), Subject))
+  })
+
+
+
+  #gets the unique variable list once the original dataset has been loaded
+  observeEvent(originalData(), {
+    updateSelectInput(session, "var1", choices = names(myData()))
+  })
+  
+  
+  
+  #gets the unique variable list once the original dataset has been loaded
+  observeEvent(originalData(), {
+    updateSelectInput(session, "var2", choices = names(myData()))
+  })
 
   
   
-  # output$plot2 <- renderPlotly({
-  #   
-  #   #subset graphical data by subject
-  #   currentSubject <- as.data.frame(subset(myData(), Subject == input$subs))
-  #   currentSubject[is.na(currentSubject)] <- 0
-  #   
-  #   #reorganize x-axis by user-input order
-  #   targetOrder <- as.data.frame(colnames(pivTableView()))
-  #   names(targetOrder) <- c("Visit")
-  #   cat("USER ORDER BELOW");
-  #   print(targetOrder)
-  #   
-  #   currentVisits <- left_join(targetOrder, currentSubject, by = "Visit")
-  #   currentVisits <- subset(currentVisits, !is.na(Subject))
-  #   cat("SUBJECT VISITS BELOW");
-  #   print(currentVisits)
-  #   
-  #   visitReorder <- targetOrder[match(targetOrder, currentVisits$Visit),]
-  #   visitReorder <- targetOrder[match(targetOrder, currentVisits$Visit),]
-  #   cat("MATCHED VISIT ORDER");
-  #   print(visitReorder)
-  #   
-  # 
-  #   
-  #   x <- c(currentVisits$Visit)
-  #   y <- c(currentSubject$Tier3)
-  #   data <- data.frame(x, y)
-  #   
-  #   p <- plot_ly(data, x = ~x, y = ~y, type = 'scatter', mode = 'lines+markers') %>%
-  #     layout(title = "Titer by Subject", xaxis = list(title = "Visit"), yaxis = list(title = "Titer"))
-  #   p
-  #   
-  #   # ggplot(data=currentSubject, aes(x=names(pivotTableFunc()), y=Tier3, group=1)) +
-  #   #        geom_line()
-  #   
-  # })
+  output$plot2 <- renderPlot({
+    
+    # cat(input$var1)
+    
+    primaryVar <- as.character(input$var1)
+    secondaryVar <- as.character(input$var2)
+    
+    y = !!input$var2
+    print(y)
+    
+    cat(primaryVar)
+    
+    #subset graphical data by subject
+    currentSubject <- as.data.frame(subset(myData(), Subject == input$subs))
+    currentSubject[is.na(currentSubject)] <- 0
+    
+    if(primaryVar %in% colnames(currentSubject)) {
+      
+      cat("yessir")
+      
+    } else {
+      
+      cat("no sir")
+      
+    }
+    
+    #THE BELOW WORKS
+    
+    p <- ggplot(currentSubject, aes(x = Visit, group = 1))
+    p <- p + geom_line(aes(y = !!input$var1, color = "Primary"))
+    p <- p + geom_line(aes(y = !!input$var2, color = "Secondary"))
+    
+    
+    
+    # p <- p + geom_line(aes(y = secondaryVar/2, colour = "Secondary"))
+    # p <- p + scale_y_continuous(sec.axis = sec_axis(~.*2, name = "Secondary))
+    # p <- p + labs(y = "Primary", x = "Visit", colour = "Variable")
+    
+    
+    p
+
+  })
   
   
   #begin "sample size" output field
-  # output$visits <- renderText({
-  #   
-  #   paste(colnames(pivTableView()), ",", sep="")
-  #   
-  # })
+  output$visits <- renderText({
+
+    paste(colnames(pivTableView()), ",", sep="")
+
+  })
   
   
   
