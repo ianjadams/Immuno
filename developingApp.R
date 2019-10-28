@@ -50,7 +50,7 @@ ui <- shinyUI(fluidPage(
   ),
   
   useShinyjs(),
-  headerPanel(title = ("LEM's Immuno Analysis Now"),
+  headerPanel(title = ("LEM's Immunogenicity Analysis Now Tool"),
               tags$head(tags$link(rel = "icon", type = "image/png", href = "antibody.ico"),
                         windowTitle = "Immuno_Analysis_Now")),
   sidebarLayout(
@@ -2472,44 +2472,32 @@ server <- function(input, output, session) {
   
   output$plot2 <- renderPlot({
     
-    # cat(input$var1)
-    
-    primaryVar <- as.character(input$var1)
-    secondaryVar <- as.character(input$var2)
-    
-    y = !!input$var2
-    print(y)
-    
-    cat(primaryVar)
-    
     #subset graphical data by subject
     currentSubject <- as.data.frame(subset(myData(), Subject == input$subs))
+    
+    excludedCols <- select(currentSubject, Subject, Visit)
+    excludedNames <- c("Subject", "Visit")
+    
+    currentSubject <- currentSubject %>% select(-one_of(excludedNames))
+    currentSubject[, ] <- lapply(currentSubject[, ], as.numeric)
     currentSubject[is.na(currentSubject)] <- 0
     
-    if(primaryVar %in% colnames(currentSubject)) {
-      
-      cat("yessir")
-      
-    } else {
-      
-      cat("no sir")
-      
-    }
+    currentSubject <- cbind(excludedCols, currentSubject)
     
     #THE BELOW WORKS
     
     p <- ggplot(currentSubject, aes(x = Visit, group = 1))
     p <- p + geom_line(aes(y = !!input$var1, color = "Primary"))
-    p <- p + geom_line(aes(y = !!input$var2, color = "Secondary"))
+    p2 <- p + geom_line(aes(y = !!input$var2, color = "Secondary"))
     
     
     
-    # p <- p + geom_line(aes(y = secondaryVar/2, colour = "Secondary"))
-    # p <- p + scale_y_continuous(sec.axis = sec_axis(~.*2, name = "Secondary))
-    # p <- p + labs(y = "Primary", x = "Visit", colour = "Variable")
+    p2 <- p2 + geom_line(aes(y = p2/2, colour = "Secondary"))
+    p2 <- p2 + scale_y_continuous(sec.axis = sec_axis(~.*1, name = input$var2))
+    p2 <- p2 + labs(y = input$var1, x = "Visit", colour = "Variable")
+    p2
     
-    
-    p
+
 
   })
   
