@@ -2510,9 +2510,17 @@ server <- function(input, output, session) {
     
     print(currentSubject)
     
+    #set x-axis
     p <- ggplot(currentSubject, aes(x = Visit, group = 1))
-    p <- p + geom_line(aes(y = Primary, colour = primLine))
-    p <- p + geom_line(aes(y = Secondary/scaleInt, colour = secLine))
+    
+    #draw first line
+    p <- p + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
+             geom_point(aes(y = Primary))
+    
+    #draw second line
+    p <- p + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
+             geom_point(aes(y = Secondary/scaleInt))
+    p <- p + scale_color_brewer(palette = "Dark2")
     p <- p + scale_y_continuous(sec.axis = sec_axis(~.*scaleInt, name = secLine))
     p <- p + labs(y = primLine, x = "Visit", colour = "")
     p
