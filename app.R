@@ -50,7 +50,7 @@ ui <- shinyUI(fluidPage(
   ),
   
   useShinyjs(),
-  headerPanel(title = ("LEM's Immuno Analysis Now"),
+  headerPanel(title = ("LEM's Immunogenicity Analysis Now Tool"),
               tags$head(tags$link(rel = "icon", type = "image/png", href = "antibody.ico"),
                         windowTitle = "Immuno_Analysis_Now")),
   sidebarLayout(
@@ -138,11 +138,12 @@ ui <- shinyUI(fluidPage(
                            tableOutput('premises')),
                   tabPanel("Plot", plotOutput('plot'),
                            verbatimTextOutput('sampleSize'),
-                           br()),
-                  # varSelectInput("subs", "Select Subject:", character(0)),
-                  # varSelectInput("vals", "Select Variable:", character(0)),
-                  # plotlyOutput('plot2'),
-                  # verbatimTextOutput('visits')),
+                           br(),
+                           varSelectInput("subs", "Select Subject:", character(0)),
+                           varSelectInput("vars", "Choose 2 Variables to Plot:", character(0), multiple = TRUE),
+                           numericInput("scaleIn", "Multiplier for Y-Axis Scale", 1, min = 0, max = 1000000000),
+                           verbatimTextOutput('scaleOut'),
+                           plotOutput('plot2')),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
                            br(),
                            DT::dataTableOutput('summary2'),
@@ -332,7 +333,6 @@ server <- function(input, output, session) {
     if (length(input$col) == 0) return(pivotTableFunc())
     #arranges the table based on order user selects visit codes
     newPivTable <- pivotTableFunc() %>% dplyr::select(!!!input$col)
-    print(colnames(newPivTable))
     return(newPivTable)
     
   }
@@ -2449,70 +2449,103 @@ server <- function(input, output, session) {
   #begin "Plot" tab
   
   #gets the unique Subject list once the original dataset has been loaded
-  # observeEvent(originalData(), {
-  #   updateSelectInput(session, "subs", choices = distinct(myData(), Subject))
-  # })
-  # 
-  # 
-  # 
-  # #gets the unique variable list once the original dataset has been loaded
-  # observeEvent(originalData(), {
-  #   updateSelectInput(session, "vals", choices = names(myData()))
-  # })
+  observeEvent(originalData(), {
+    updateSelectInput(session, "subs", choices = distinct(myData(), Subject))
+  })
   
   
   
-  # output$plot2 <- renderPlotly({
-  #   
-  #   #subset graphical data by subject
-  #   currentSubject <- as.data.frame(subset(myData(), Subject == input$subs))
-  #   currentSubject[is.na(currentSubject)] <- 0
-  #   
-  #   #reorganize x-axis by user-input order
-  #   targetOrder <- as.data.frame(colnames(pivTableView()))
-  #   names(targetOrder) <- c("Visit")
-  #   cat("USER ORDER BELOW");
-  #   print(targetOrder)
-  #   
-  #   currentVisits <- left_join(targetOrder, currentSubject, by = "Visit")
-  #   currentVisits <- subset(currentVisits, !is.na(Subject))
-  #   cat("SUBJECT VISITS BELOW");
-  #   print(currentVisits)
-  #   
-  #   visitReorder <- targetOrder[match(targetOrder, currentVisits$Visit),]
-  #   visitReorder <- targetOrder[match(targetOrder, currentVisits$Visit),]
-  #   cat("MATCHED VISIT ORDER");
-  #   print(visitReorder)
-  #   
-  # 
-  #   
-  #   x <- c(currentVisits$Visit)
-  #   y <- c(currentSubject$Tier3)
-  #   data <- data.frame(x, y)
-  #   
-  #   p <- plot_ly(data, x = ~x, y = ~y, type = 'scatter', mode = 'lines+markers') %>%
-  #     layout(title = "Titer by Subject", xaxis = list(title = "Visit"), yaxis = list(title = "Titer"))
-  #   p
-  #   
-  #   # ggplot(data=currentSubject, aes(x=names(pivotTableFunc()), y=Tier3, group=1)) +
-  #   #        geom_line()
-  #   
-  # })
-  
-  
-  #begin "sample size" output field
-  # output$visits <- renderText({
-  #   
-  #   paste(colnames(pivTableView()), ",", sep="")
-  #   
-  # })
+  #gets the unique variables once the original dataset has been loaded
+  #Subject and Visit are prepopulated in the select list
+  observeEvent(originalData(), {
+    updateSelectInput(session, "vars", choices = names(myData()), selected = c("Subject", "Visit"))
+  })
   
   
   
+  #begin "scale" input field
+  output$scaleOut <- renderText({
+    
+    paste("Scale set at 1:", input$scaleIn, " transformation from left to right axis", sep="")
+    
+  })
+  #end "scale" input field
   
   
   
+  #create table withSubject, Visit, and additional columns selected by the user
+  lineGraphCols <- function() {
+    
+    #arranges the table based on order user selects variables
+    newLinesData <- myData() %>% dplyr::select(!!!input$vars)
+    return(newLinesData)
+    
+  }
   
+  
+  
+  output$plot2 <- renderPlot({
+    
+    #takes in user input MRD value
+    scaleInt <- input$scaleIn 
+    
+    #subset graphical data by one subject
+    currentSubject <- subset(lineGraphCols(), Subject == input$subs)
+    
+    #drop columns "Subject" and "Visit" from the currentSubject table
+    excludedCols <- select(currentSubject, Subject, Visit)
+    excludedNames <- c("Subject", "Visit")
+    
+    #make currentSubject table numeric (excluding Subject and Visit)
+    currentSubject <- currentSubject %>% select(-one_of(excludedNames))
+    currentSubject[, ] <- lapply(currentSubject[, ], as.numeric)
+    currentSubject[is.na(currentSubject)] <- 0
+    
+    #recombine columns "Subject" and "Visit" to the numeric table for this subject
+    currentSubject <- cbind(excludedCols, currentSubject)
+    
+    #change first and second variable selections from input$vars to "Primary" and "Secondary" for graphing purposes
+    colnames(currentSubject)[3] <- "Primary"
+    colnames(currentSubject)[4] <- "Secondary"
+    primLine <- as.character(input$vars[3])
+    secLine <- as.character(input$vars[4])
+    
+    #function to retrieve the order of visits set in pivTableView()
+    visitReorder <- function() {
+      
+      targetOrder <- colnames(pivTableView())
+      return(targetOrder)
+      
+    }
+    
+    #rearrange subject visits according to the vector order of columns set in pivTableView()
+    currentSubject$Visit <- factor(currentSubject$Visit, levels = visitReorder())
+    dfSubject <- currentSubject[order(currentSubject$Visit),]
+    
+    
+    
+    #begin plot for dual y-axis time series data
+    
+    #set x-axis
+    p <- ggplot(dfSubject, aes(x = Visit, group = 1))
+    
+    #draw first line
+    p <- p + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
+             geom_point(aes(y = Primary))
+    
+    #draw second line
+    p <- p + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
+             geom_point(aes(y = Secondary/scaleInt))
+    
+    #styling, set secondary y-axis scale, adjust names of x-axis and primary y-axis
+    p <- p + scale_color_brewer(palette = "Dark2")
+    p <- p + scale_y_continuous(sec.axis = sec_axis(~.*scaleInt, name = secLine))
+    p <- p + labs(x = "Visit", y = primLine, colour = "")
+    p
+    
+    
+    
+  })
   
   
   

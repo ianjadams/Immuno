@@ -143,8 +143,7 @@ ui <- shinyUI(fluidPage(
                            varSelectInput("vars", "Choose 2 Variables to Plot:", character(0), multiple = TRUE),
                            numericInput("scaleIn", "Multiplier for Y-Axis Scale", 1, min = 0, max = 1000000000),
                            verbatimTextOutput('scaleOut'),
-                           plotOutput('plot2'),
-                           verbatimTextOutput('visits')),
+                           plotOutput('plot2')),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
                            br(),
                            DT::dataTableOutput('summary2'),
@@ -334,7 +333,6 @@ server <- function(input, output, session) {
     if (length(input$col) == 0) return(pivotTableFunc())
     #arranges the table based on order user selects visit codes
     newPivTable <- pivotTableFunc() %>% dplyr::select(!!!input$col)
-    print(colnames(newPivTable))
     return(newPivTable)
     
   }
@@ -2454,10 +2452,11 @@ server <- function(input, output, session) {
   observeEvent(originalData(), {
     updateSelectInput(session, "subs", choices = distinct(myData(), Subject))
   })
-
-
-
-  #gets the unique visit codes once the original dataset has been loaded
+  
+  
+  
+  #gets the unique variables once the original dataset has been loaded
+  #Subject and Visit are prepopulated in the select list
   observeEvent(originalData(), {
     updateSelectInput(session, "vars", choices = names(myData()), selected = c("Subject", "Visit"))
   })
@@ -2474,44 +2473,60 @@ server <- function(input, output, session) {
   
   
   
-  #create new titer pivot table with reorganized visit codes from user input
+  #create table withSubject, Visit, and additional columns selected by the user
   lineGraphCols <- function() {
-
-    #if user does not reorganize any columns, return the original pivot table
-    if(length(input$vars) == 0) return(myData())
-    #arranges the table based on order user selects visit codes
+    
+    #arranges the table based on order user selects variables
     newLinesData <- myData() %>% dplyr::select(!!!input$vars)
     return(newLinesData)
-
-  }
-
-
     
+  }
+  
+  
+  
   output$plot2 <- renderPlot({
     
     #takes in user input MRD value
     scaleInt <- input$scaleIn 
     
-    #subset graphical data by subject
+    #subset graphical data by one subject
     currentSubject <- subset(lineGraphCols(), Subject == input$subs)
-     
+    
+    #drop columns "Subject" and "Visit" from the currentSubject table
     excludedCols <- select(currentSubject, Subject, Visit)
     excludedNames <- c("Subject", "Visit")
-
+    
+    #make currentSubject table numeric (excluding Subject and Visit)
     currentSubject <- currentSubject %>% select(-one_of(excludedNames))
     currentSubject[, ] <- lapply(currentSubject[, ], as.numeric)
     currentSubject[is.na(currentSubject)] <- 0
-
+    
+    #recombine columns "Subject" and "Visit" to the numeric table for this subject
     currentSubject <- cbind(excludedCols, currentSubject)
+    
+    #change first and second variable selections from input$vars to "Primary" and "Secondary" for graphing purposes
     colnames(currentSubject)[3] <- "Primary"
     colnames(currentSubject)[4] <- "Secondary"
     primLine <- as.character(input$vars[3])
     secLine <- as.character(input$vars[4])
     
-    print(currentSubject)
+    #function to retrieve the order of visits set in pivTableView()
+    visitReorder <- function() {
+      
+      targetOrder <- colnames(pivTableView())
+      return(targetOrder)
+      
+    }
+    
+    #rearrange subject visits according to the vector order of columns set in pivTableView()
+    currentSubject$Visit <- factor(currentSubject$Visit, levels = visitReorder())
+    dfSubject <- currentSubject[order(currentSubject$Visit),]
+    
+    
+    #begin plot for dual y-axis time series data
     
     #set x-axis
-    p <- ggplot(currentSubject, aes(x = Visit, group = 1))
+    p <- ggplot(dfSubject, aes(x = Visit, group = 1))
     
     #draw first line
     p <- p + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
@@ -2520,29 +2535,16 @@ server <- function(input, output, session) {
     #draw second line
     p <- p + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
              geom_point(aes(y = Secondary/scaleInt))
+    
+    #styling, set secondary y-axis scale, adjust names of x-axis and primary y-axis
     p <- p + scale_color_brewer(palette = "Dark2")
     p <- p + scale_y_continuous(sec.axis = sec_axis(~.*scaleInt, name = secLine))
-    p <- p + labs(y = primLine, x = "Visit", colour = "")
+    p <- p + labs(x = "Visit", y = primLine, colour = "")
     p
-
-
-
+    
+    
+    
   })
-  
-  
-  #begin "sample size" output field
-  output$visits <- renderText({
-
-    paste(colnames(pivTableView()), ",", sep="")
-
-  })
-  
-  
-  
-  
-  
-  
-  
   
   
   
