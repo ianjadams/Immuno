@@ -109,6 +109,7 @@ ui <- shinyUI(fluidPage(
       numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 1000000000),
       verbatimTextOutput('mrdOut'),
       
+      varSelectInput("col", "Reorganize visit codes:", character(0), multiple = TRUE),
       
       #input: select input for changing current view of the table
       selectInput("dropdown", "Select a view",
@@ -122,7 +123,6 @@ ui <- shinyUI(fluidPage(
                                 "Titer Pivot Table" = "titercounts"))),
                   selected = "original"),
       
-      
       #download button
       downloadButton("downloadData", "Download All Tables")
       
@@ -131,19 +131,20 @@ ui <- shinyUI(fluidPage(
       
       #output: separate the page into specific tabs
       tabsetPanel(type = "tabs",
-                  tabPanel("Table", varSelectInput("col", "Reorganize Visit Codes:", character(0), multiple = TRUE),
-                           DT::dataTableOutput('contents')),
+                  tabPanel("Table", DT::dataTableOutput('contents')),
                   tabPanel("Flags", DT::dataTableOutput('flag'),
                            br(),
                            tableOutput('premises')),
                   tabPanel("Plot", plotOutput('plot'),
                            verbatimTextOutput('sampleSize'),
                            br(),
+                           br(),
                            varSelectInput("subs", "Select Subject:", character(0)),
                            varSelectInput("vars", "Choose 2 Variables to Plot:", character(0), multiple = TRUE),
                            numericInput("scaleIn", "Multiplier for Y-Axis Scale", 1, min = 0, max = 1000000000),
                            verbatimTextOutput('scaleOut'),
-                           plotOutput('plot2')),
+                           plotOutput('plot2'),
+                           br()),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
                            br(),
                            DT::dataTableOutput('summary2'),
@@ -322,7 +323,7 @@ server <- function(input, output, session) {
   
   #gets the unique visit codes once the original dataset has been loaded
   observeEvent(originalData(), {
-    updateSelectInput(session, "col", choices = names(pivotTableFunc()))
+    updateSelectInput(session, "col", choices = names(pivotTableFunc()), selected = colnames(pivotTableFunc()))
   })
   
   
@@ -2466,7 +2467,7 @@ server <- function(input, output, session) {
   #begin "scale" input field
   output$scaleOut <- renderText({
     
-    paste("Scale set at 1:", input$scaleIn, " transformation from left to right axis", sep="")
+    paste("Scale set at 1:", input$scaleIn, " transformation", sep="")
     
   })
   #end "scale" input field
@@ -2499,7 +2500,6 @@ server <- function(input, output, session) {
     #make currentSubject table numeric (excluding Subject and Visit)
     currentSubject <- currentSubject %>% select(-one_of(excludedNames))
     currentSubject[, ] <- lapply(currentSubject[, ], as.numeric)
-    currentSubject[is.na(currentSubject)] <- 0
     
     #recombine columns "Subject" and "Visit" to the numeric table for this subject
     currentSubject <- cbind(excludedCols, currentSubject)
@@ -2521,6 +2521,7 @@ server <- function(input, output, session) {
     #rearrange subject visits according to the vector order of columns set in pivTableView()
     currentSubject$Visit <- factor(currentSubject$Visit, levels = visitReorder())
     dfSubject <- currentSubject[order(currentSubject$Visit),]
+    print(dfSubject)
     
     
     #begin plot for dual y-axis time series data
@@ -2530,11 +2531,11 @@ server <- function(input, output, session) {
     
     #draw first line
     p <- p + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
-             geom_point(aes(y = Primary))
+             geom_point(aes(y = Primary), shape = 21, colour = "white", fill = "black", size = 3, na.rm = TRUE)
     
     #draw second line
     p <- p + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
-             geom_point(aes(y = Secondary/scaleInt))
+             geom_point(aes(y = Secondary/scaleInt), shape = 21, colour = "black", fill = "white", size = 3, na.rm = TRUE)
     
     #styling, set secondary y-axis scale, adjust names of x-axis and primary y-axis
     p <- p + scale_color_brewer(palette = "Dark2")
