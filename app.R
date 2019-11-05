@@ -143,7 +143,8 @@ ui <- shinyUI(fluidPage(
                            varSelectInput("vars", "Choose 2 Variables to Plot:", character(0), multiple = TRUE),
                            numericInput("scaleIn", "Multiplier for Y-Axis Scale", 1, min = 0, max = 1000000000),
                            verbatimTextOutput('scaleOut'),
-                           plotOutput('plot2')),
+                           plotOutput('plot2'),
+                           br()),
                   tabPanel("Summary", DT::dataTableOutput('summary1'),
                            br(),
                            DT::dataTableOutput('summary2'),
@@ -2466,7 +2467,7 @@ server <- function(input, output, session) {
   #begin "scale" input field
   output$scaleOut <- renderText({
     
-    paste("Scale set at 1:", input$scaleIn, " transformation from left to right axis", sep="")
+    paste("Scale set at 1:", input$scaleIn, " transformation", sep="")
     
   })
   #end "scale" input field
@@ -2499,7 +2500,6 @@ server <- function(input, output, session) {
     #make currentSubject table numeric (excluding Subject and Visit)
     currentSubject <- currentSubject %>% select(-one_of(excludedNames))
     currentSubject[, ] <- lapply(currentSubject[, ], as.numeric)
-    currentSubject[is.na(currentSubject)] <- 0
     
     #recombine columns "Subject" and "Visit" to the numeric table for this subject
     currentSubject <- cbind(excludedCols, currentSubject)
@@ -2507,8 +2507,8 @@ server <- function(input, output, session) {
     #change first and second variable selections from input$vars to "Primary" and "Secondary" for graphing purposes
     colnames(currentSubject)[3] <- "Primary"
     colnames(currentSubject)[4] <- "Secondary"
-    primLine <- as.character(input$vars[3])
-    secLine <- as.character(input$vars[4])
+    primLine <- as.factor(input$vars[3])
+    secLine <- as.factor(input$vars[4])
     
     #function to retrieve the order of visits set in pivTableView()
     visitReorder <- function() {
@@ -2531,14 +2531,15 @@ server <- function(input, output, session) {
     
     #draw first line
     p <- p + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
-             geom_point(aes(y = Primary))
+             geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
     
     #draw second line
     p <- p + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
-             geom_point(aes(y = Secondary/scaleInt))
+             geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
     
     #styling, set secondary y-axis scale, adjust names of x-axis and primary y-axis
-    p <- p + scale_color_brewer(palette = "Dark2")
+    colorVec <- c("#337ab7", "#18bc9c")
+    p <- p + scale_colour_manual(values = colorVec)
     p <- p + scale_y_continuous(sec.axis = sec_axis(~.*scaleInt, name = secLine))
     p <- p + labs(x = "Visit", y = primLine, colour = "")
     p

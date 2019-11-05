@@ -109,7 +109,6 @@ ui <- shinyUI(fluidPage(
       numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 1000000000),
       verbatimTextOutput('mrdOut'),
       
-      varSelectInput("col", "Reorganize visit codes:", character(0), multiple = TRUE),
       
       #input: select input for changing current view of the table
       selectInput("dropdown", "Select a view",
@@ -123,6 +122,7 @@ ui <- shinyUI(fluidPage(
                                 "Titer Pivot Table" = "titercounts"))),
                   selected = "original"),
       
+      
       #download button
       downloadButton("downloadData", "Download All Tables")
       
@@ -131,13 +131,13 @@ ui <- shinyUI(fluidPage(
       
       #output: separate the page into specific tabs
       tabsetPanel(type = "tabs",
-                  tabPanel("Table", DT::dataTableOutput('contents')),
+                  tabPanel("Table", varSelectInput("col", "Reorganize Visit Codes:", character(0), multiple = TRUE),
+                           DT::dataTableOutput('contents')),
                   tabPanel("Flags", DT::dataTableOutput('flag'),
                            br(),
                            tableOutput('premises')),
                   tabPanel("Plot", plotOutput('plot'),
                            verbatimTextOutput('sampleSize'),
-                           br(),
                            br(),
                            varSelectInput("subs", "Select Subject:", character(0)),
                            varSelectInput("vars", "Choose 2 Variables to Plot:", character(0), multiple = TRUE),
@@ -323,7 +323,7 @@ server <- function(input, output, session) {
   
   #gets the unique visit codes once the original dataset has been loaded
   observeEvent(originalData(), {
-    updateSelectInput(session, "col", choices = names(pivotTableFunc()), selected = colnames(pivotTableFunc()))
+    updateSelectInput(session, "col", choices = names(pivotTableFunc()))
   })
   
   
@@ -2507,8 +2507,8 @@ server <- function(input, output, session) {
     #change first and second variable selections from input$vars to "Primary" and "Secondary" for graphing purposes
     colnames(currentSubject)[3] <- "Primary"
     colnames(currentSubject)[4] <- "Secondary"
-    primLine <- as.character(input$vars[3])
-    secLine <- as.character(input$vars[4])
+    primLine <- as.factor(input$vars[3])
+    secLine <- as.factor(input$vars[4])
     
     #function to retrieve the order of visits set in pivTableView()
     visitReorder <- function() {
@@ -2521,7 +2521,7 @@ server <- function(input, output, session) {
     #rearrange subject visits according to the vector order of columns set in pivTableView()
     currentSubject$Visit <- factor(currentSubject$Visit, levels = visitReorder())
     dfSubject <- currentSubject[order(currentSubject$Visit),]
-    print(dfSubject)
+    
     
     
     #begin plot for dual y-axis time series data
@@ -2531,14 +2531,15 @@ server <- function(input, output, session) {
     
     #draw first line
     p <- p + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
-             geom_point(aes(y = Primary), shape = 21, colour = "white", fill = "black", size = 3, na.rm = TRUE)
+      geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
     
     #draw second line
     p <- p + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
-             geom_point(aes(y = Secondary/scaleInt), shape = 21, colour = "black", fill = "white", size = 3, na.rm = TRUE)
+      geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
     
     #styling, set secondary y-axis scale, adjust names of x-axis and primary y-axis
-    p <- p + scale_color_brewer(palette = "Dark2")
+    colorVec <- c("#337ab7", "#18bc9c")
+    p <- p + scale_colour_manual(values = colorVec)
     p <- p + scale_y_continuous(sec.axis = sec_axis(~.*scaleInt, name = secLine))
     p <- p + labs(x = "Visit", y = primLine, colour = "")
     p
