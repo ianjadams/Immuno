@@ -2532,11 +2532,11 @@ server <- function(input, output, session) {
     
     #draw first line
     plot2 <- plot2 + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
-      geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
+                     geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
     
     #draw second line
     plot2 <- plot2 + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
-      geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
+                     geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
     
     #styling, set secondary y-axis scale, adjust names of x-axis and primary y-axis
     #primary variable choice will be solid line, secondary variable choice will be dashed line
@@ -2545,22 +2545,19 @@ server <- function(input, output, session) {
     plot2 <- plot2 + scale_colour_manual(values = colorVec)
     plot2 <- plot2 + scale_y_continuous(sec.axis = sec_axis(~.*scaleInt, name = secLine))
     plot2 <- plot2 + labs(x = "Visit", y = primLine, colour = "")
-    plot2Title <- paste0("Dual Axis Insight: ", primLine, " vs.", secLine, sep = "")
+    plot2Title <- paste0("Dual Y-Axes Insight: ", primLine, " vs. ", secLine, sep = "")
     plot2 <- plot2 + ggtitle(plot2Title)
     
     plot2 + theme(
-      plot.title = element_text(color = "#2c3e50", size = 50, face = "bold"),
-      # axis.title.x = element_text(color = "#2c3e50", size = 20, face = "bold"),
-      # axis.title.y = element_text(color = "#2c3e50", size = 20, face = "bold"),
-      # axis.text.x = element_text(size = 14),
-      # axis.text.y = element_text(size = 14),
-      # axis.line = element_line(color = "#337ab7", size = 1, linetype = "solid"),
-      # panel.background = element_rect(fill = "#cccccc", color = "#cccccc"),
-      # panel.grid.major = element_blank(), 
-      # panel.grid.minor = element_blank()
+      axis.ticks.length = unit(10, "pt"),
+      plot.title = element_text(color = "#2c3e50", size = 24, face = "bold"),
+      axis.title.x = element_text(color = "#2c3e50", size = 20, face = "bold"),
+      axis.title.y = element_text(color = "#2c3e50", size = 20, face = "bold"),
+      axis.text.x = element_text(size = 14, angle = 45, hjust = 1),
+      axis.text.y = element_text(size = 14),
+      axis.line = element_line(color = "#337ab7", size = 1, linetype = "solid"),
+      panel.background = element_rect(fill = "#cccccc", color = "#cccccc")
     )
-    
-    plot2
     
     
     
