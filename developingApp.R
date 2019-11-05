@@ -109,6 +109,7 @@ ui <- shinyUI(fluidPage(
       numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 1000000000),
       verbatimTextOutput('mrdOut'),
       
+      varSelectInput("col", "Reorganize Visit Codes:", character(0), multiple = TRUE),
       
       #input: select input for changing current view of the table
       selectInput("dropdown", "Select a view",
@@ -131,8 +132,7 @@ ui <- shinyUI(fluidPage(
       
       #output: separate the page into specific tabs
       tabsetPanel(type = "tabs",
-                  tabPanel("Table", varSelectInput("col", "Reorganize Visit Codes:", character(0), multiple = TRUE),
-                           DT::dataTableOutput('contents')),
+                  tabPanel("Table", DT::dataTableOutput('contents')),
                   tabPanel("Flags", DT::dataTableOutput('flag'),
                            br(),
                            tableOutput('premises')),
@@ -323,7 +323,7 @@ server <- function(input, output, session) {
   
   #gets the unique visit codes once the original dataset has been loaded
   observeEvent(originalData(), {
-    updateSelectInput(session, "col", choices = names(pivotTableFunc()))
+    updateSelectInput(session, "col", choices = names(pivotTableFunc()), selected = names(pivotTableFunc()))
   })
   
   
@@ -2521,28 +2521,46 @@ server <- function(input, output, session) {
     #rearrange subject visits according to the vector order of columns set in pivTableView()
     currentSubject$Visit <- factor(currentSubject$Visit, levels = visitReorder())
     dfSubject <- currentSubject[order(currentSubject$Visit),]
+    print(dfSubject)
     
     
     
     #begin plot for dual y-axis time series data
     
     #set x-axis
-    p <- ggplot(dfSubject, aes(x = Visit, group = 1))
+    plot2 <- ggplot(dfSubject, aes(x = Visit, group = 1))
     
     #draw first line
-    p <- p + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
-      geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
+    plot2 <- plot2 + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
+             geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
     
     #draw second line
-    p <- p + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
-      geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
+    plot2 <- plot2 + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
+             geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
     
     #styling, set secondary y-axis scale, adjust names of x-axis and primary y-axis
+    #primary variable choice will be solid line, secondary variable choice will be dashed line
+    #blue line is the variable that comes first in the alphabet, green with variable name that comes second to the first variable
     colorVec <- c("#337ab7", "#18bc9c")
-    p <- p + scale_colour_manual(values = colorVec)
-    p <- p + scale_y_continuous(sec.axis = sec_axis(~.*scaleInt, name = secLine))
-    p <- p + labs(x = "Visit", y = primLine, colour = "")
-    p
+    plot2 <- plot2 + scale_colour_manual(values = colorVec)
+    plot2 <- plot2 + scale_y_continuous(sec.axis = sec_axis(~.*scaleInt, name = secLine))
+    plot2 <- plot2 + labs(x = "Visit", y = primLine, colour = "")
+    plot2Title <- paste0("Dual Axis Insight: ", primLine, " vs.", secLine, sep = "")
+    plot2 <- plot2 + ggtitle(plot2Title)
+    
+    plot2 + theme(
+      plot.title = element_text(color = "#2c3e50", size = 50, face = "bold"),
+      # axis.title.x = element_text(color = "#2c3e50", size = 20, face = "bold"),
+      # axis.title.y = element_text(color = "#2c3e50", size = 20, face = "bold"),
+      # axis.text.x = element_text(size = 14),
+      # axis.text.y = element_text(size = 14),
+      # axis.line = element_line(color = "#337ab7", size = 1, linetype = "solid"),
+      # panel.background = element_rect(fill = "#cccccc", color = "#cccccc"),
+      # panel.grid.major = element_blank(), 
+      # panel.grid.minor = element_blank()
+    )
+    
+    plot2
     
     
     
