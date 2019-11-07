@@ -109,7 +109,7 @@ ui <- shinyUI(fluidPage(
       numericInput("mrdIn", "Enter Minimum Required Dilution:", 10, min = 1, max = 1000000000),
       verbatimTextOutput('mrdOut'),
       
-      varSelectInput("col", "Reorganize Visit Codes:", character(0), multiple = TRUE),
+      varSelectInput("col", "Reorganize visit codes:", character(0), multiple = TRUE),
       
       #input: select input for changing current view of the table
       selectInput("dropdown", "Select a view",
@@ -179,7 +179,7 @@ server <- function(input, output, session) {
     initialData <- data.frame(read_excel(inFile$datapath))
     initialData$Subject[is.na(initialData$Subject)] <- "Unknown Subject"
     initialData$Visit[is.na(initialData$Visit)] <- "Unknown Visit"
-    initialData[initialData==input$baselineVisits] <- "Baseline"
+    initialData$Visit[initialData$Visit==input$baselineVisits] <- "Baseline"
     as.data.frame(initialData)
     
   })
@@ -2545,12 +2545,13 @@ server <- function(input, output, session) {
     plot2 <- plot2 + scale_colour_manual(values = colorVec)
     plot2 <- plot2 + scale_y_continuous(sec.axis = sec_axis(~.*scaleInt, name = secLine))
     plot2 <- plot2 + labs(x = "Visit", y = primLine, colour = "")
-    plot2Title <- paste0("Dual Y-Axes Insight: ", primLine, " vs. ", secLine, sep = "")
+    plot2Title <- paste0("Time Series Trend: ", primLine, " vs. ", secLine, sep = "")
     plot2 <- plot2 + ggtitle(plot2Title)
     
     plot2 + theme(
-      axis.ticks.length = unit(10, "pt"),
       plot.title = element_text(color = "#2c3e50", size = 24, face = "bold"),
+      legend.text = element_text(size = 14),
+      axis.ticks.length = unit(10, "pt"),
       axis.title.x = element_text(color = "#2c3e50", size = 20, face = "bold"),
       axis.title.y = element_text(color = "#2c3e50", size = 20, face = "bold"),
       axis.text.x = element_text(size = 14, angle = 45, hjust = 1),
