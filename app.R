@@ -82,6 +82,8 @@ ui <- shinyUI(fluidPage(
       prettyCheckbox("checkT4B", "Tier 4b", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       prettyCheckbox("checkT4C", "Tier 4c", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       prettyCheckbox("checkT4D", "Tier 4d", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      prettyCheckbox("checkT4E", "Tier 4e", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
+      prettyCheckbox("checkT4F", "Tier 4f", FALSE, inline = TRUE, shape = "curve", status = "primary", animation = "pulse"),
       
       #input: text input for specifying values
       textInput("baselineVisits", label = "Complete the fields below:", placeholder = "Enter 'Baseline Visit' value"),
@@ -103,6 +105,10 @@ ui <- shinyUI(fluidPage(
       textInput("t4cND", label = NULL, placeholder = "Enter Tier 4c 'NOT Detected' value"),
       textInput("t4dD", label = NULL, placeholder = "Enter Tier 4d 'Detected' value"),
       textInput("t4dND", label = NULL, placeholder = "Enter Tier 4d 'NOT Detected' value"),
+      textInput("t4eD", label = NULL, placeholder = "Enter Tier 4e 'Detected' value"),
+      textInput("t4eND", label = NULL, placeholder = "Enter Tier 4e 'NOT Detected' value"),
+      textInput("t4fD", label = NULL, placeholder = "Enter Tier 4f 'Detected' value"),
+      textInput("t4fND", label = NULL, placeholder = "Enter Tier 4f 'NOT Detected' value"),
       
       
       #input: MRD value field
@@ -512,6 +518,23 @@ server <- function(input, output, session) {
   observe({
     toggle("t4dD", condition = input$checkT4D, anim = TRUE, time = 0.5, animType = "slide")
     toggle("t4dND", condition = input$checkT4D, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("checkT4E", condition = input$checkT4D, anim = TRUE, time = 0.5, animType = "slide")
+    
+  })
+  
+  #display or hide Tier 4e input fields based on user checking the box
+  observe({
+    toggle("t4eD", condition = input$checkT4E, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t4eND", condition = input$checkT4E, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("checkT4F", condition = input$checkT4E, anim = TRUE, time = 0.5, animType = "slide")
+    
+  })
+  
+  #display or hide Tier 4d input fields based on user checking the box
+  observe({
+    toggle("t4fD", condition = input$checkT4F, anim = TRUE, time = 0.5, animType = "slide")
+    toggle("t4fND", condition = input$checkT4F, anim = TRUE, time = 0.5, animType = "slide")
+    
   })
   
   
@@ -1355,6 +1378,96 @@ server <- function(input, output, session) {
     
     
     
+    tier4eRow <- try(if("Tier4e" %in% colnames(statsData)) {
+      
+      rowFunc <- function() {
+        
+        cat("T4e exists\n");
+        
+        # num of Tier 4e samples tested
+        t4eTested <- nrow(subset(statsData, Tier4d == input$t4eD | Tier4e == input$t4eND))
+        
+        # num of Tier 4e detected samples
+        t4ePos <- nrow(subset(statsData, Tier4e == input$t4eD))
+        
+        # Tier 4e positive rate
+        t4ePR <- round((t4ePos/t4eTested * 100), 2)
+        
+        #row for Tier 4e
+        t4eTable<- data.frame("TierSubset" = paste0("Tier 4e", sep = ""),
+                              "SamplesTested" = (t4eTested),
+                              "Detected" = (t4ePos),
+                              "PositiveRate" = paste(t4ePR, "%", sep = ""),
+                              row.names = c("                               "))
+        
+        return(t4eTable)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        cat("T4e column does not exist\n");
+        
+        #dummy row with NAs
+        t4eTable<- data.frame("TierSubset" = ("NA"),
+                              "SamplesTested" = ("NA"),
+                              "Detected" = ("NA"),
+                              "PositiveRate" = (0),
+                              row.names = c("Tier 4e"))
+        
+        return(t4eTable)
+      }
+      
+    })
+    
+    
+    
+    tier4fRow <- try(if("Tier4f" %in% colnames(statsData)) {
+      
+      rowFunc <- function() {
+        
+        cat("T4f exists\n");
+        
+        # num of Tier 4f samples tested
+        t4fTested <- nrow(subset(statsData, Tier4f == input$t4fD | Tier4f == input$t4fND))
+        
+        # num of Tier 4f detected samples
+        t4fPos <- nrow(subset(statsData, Tier4f == input$t4fD))
+        
+        # Tier 4f positive rate
+        t4fPR <- round((t4fPos/t4fTested * 100), 2)
+        
+        #row for Tier 4f
+        t4fTable<- data.frame("TierSubset" = paste0("Tier 4f", sep = ""),
+                              "SamplesTested" = (t4fTested),
+                              "Detected" = (t4fPos),
+                              "PositiveRate" = paste(t4fPR, "%", sep = ""),
+                              row.names = c("                                "))
+        
+        return(t4fTable)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        cat("T4f column does not exist\n");
+        
+        #dummy row with NAs
+        t4fTable<- data.frame("TierSubset" = ("NA"),
+                              "SamplesTested" = ("NA"),
+                              "Detected" = ("NA"),
+                              "PositiveRate" = (0),
+                              row.names = c("Tier 4f"))
+        
+        return(t4fTable)
+      }
+      
+    })
+    
+    
+    
     baseData <- baselineFunc()
     
     tier1RowBase <- try(if("Tier1" %in% colnames(baseData)) {
@@ -1720,6 +1833,88 @@ server <- function(input, output, session) {
                                   row.names = c("Tier 4d "))
         
         return(t4dTableBase)
+      }
+      
+    })
+    
+    
+    
+    tier4eRowBase <- try(if("Tier4e" %in% colnames(baseData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4e samples tested
+        t4eTestedBase <- nrow(subset(baseData, Tier4e == input$t4eD | Tier4e == input$t4eND))
+        
+        # num of Tier 4e detected samples
+        t4ePosBase <- nrow(subset(baseData, Tier4e == input$t4eD))
+        
+        # Tier 4e positive rate
+        t4ePRBase <- round((t4ePosBase/t4eTestedBase * 100), 2)
+        
+        #row for Tier 4e
+        t4eTableBase<- data.frame("TierSubset" = paste0("Tier 4e", sep = ""),
+                                  "SamplesTested" = (t4eTestedBase),
+                                  "Detected" = (t4ePosBase),
+                                  "PositiveRate" = paste(t4ePRBase, "%", sep = ""),
+                                  row.names = c("                                 "))
+        
+        return(t4eTableBase)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4eTableBase<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4e "))
+        
+        return(t4eTableBase)
+      }
+      
+    })
+    
+    
+    
+    tier4fRowBase <- try(if("Tier4f" %in% colnames(baseData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4f samples tested
+        t4fTestedBase <- nrow(subset(baseData, Tier4f == input$t4fD | Tier4f == input$t4fND))
+        
+        # num of Tier 4f detected samples
+        t4fPosBase <- nrow(subset(baseData, Tier4f == input$t4fD))
+        
+        # Tier 4f positive rate
+        t4fPRBase <- round((t4fPosBase/t4fTestedBase * 100), 2)
+        
+        #row for Tier 4f
+        t4fTableBase<- data.frame("TierSubset" = paste0("Tier 4f", sep = ""),
+                                  "SamplesTested" = (t4fTestedBase),
+                                  "Detected" = (t4fPosBase),
+                                  "PositiveRate" = paste(t4fPRBase, "%", sep = ""),
+                                  row.names = c("                                  "))
+        
+        return(t4fTableBase)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4fTableBase<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4f "))
+        
+        return(t4fTableBase)
       }
       
     })
@@ -2097,6 +2292,88 @@ server <- function(input, output, session) {
     
     
     
+    tier4eRowPost <- try(if("Tier4e" %in% colnames(postData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4e samples tested
+        t4eTestedPost <- nrow(subset(postData, Tier4e == input$t4eD | Tier4e == input$t4eND))
+        
+        # num of Tier 4e detected samples
+        t4ePosPost <- nrow(subset(postData, Tier4e == input$t4eD))
+        
+        # Tier 4e positive rate
+        t4ePRPost <- round((t4ePosPost/t4eTestedPost * 100), 2)
+        
+        #row for Tier 4e
+        t4eTablePost<- data.frame("TierSubset" = paste0("Tier 4e", sep = ""),
+                                  "SamplesTested" = (t4eTestedPost),
+                                  "Detected" = (t4ePosPost),
+                                  "PositiveRate" = paste(t4ePRPost, "%", sep = ""),
+                                  row.names = c("                             "))
+        
+        return(t4eTablePost)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4eTablePost<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4e "))
+        
+        return(t4eTablePost)
+      }
+      
+    })
+    
+    
+    
+    tier4fRowPost <- try(if("Tier4f" %in% colnames(postData)) {
+      
+      rowFunc <- function() {
+        
+        # num of Tier 4f samples tested
+        t4fTestedPost <- nrow(subset(postData, Tier4f == input$t4fD | Tier4f == input$t4fND))
+        
+        # num of Tier 4f detected samples
+        t4fPosPost <- nrow(subset(postData, Tier4f == input$t4fD))
+        
+        # Tier 4f positive rate
+        t4fPRPost <- round((t4fPosPost/t4fTestedPost * 100), 2)
+        
+        #row for Tier 4f
+        t4fTablePost<- data.frame("TierSubset" = paste0("Tier 4f", sep = ""),
+                                  "SamplesTested" = (t4fTestedPost),
+                                  "Detected" = (t4fPosPost),
+                                  "PositiveRate" = paste(t4fPRPost, "%", sep = ""),
+                                  row.names = c("                              "))
+        
+        return(t4fTablePost)
+      }
+      
+    } else {
+      
+      noRowFunc <- function() {
+        
+        #dummy row with NAs
+        t4fTablePost<- data.frame("TierSubset" = ("NA"),
+                                  "SamplesTested" = ("NA"),
+                                  "Detected" = ("NA"),
+                                  "PositiveRate" = (0),
+                                  row.names = c("Tier 4f "))
+        
+        return(t4fTablePost)
+      }
+      
+    })
+    
+    
+    
     #row for Total
     totalRow <- function() {
       
@@ -2144,11 +2421,11 @@ server <- function(input, output, session) {
     if("Tier1" %in% colnames(baseData)) {
       
       finalTierTable <- try(rbind(tier1Row(), tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
-                                  tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow(),
+                                  tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow(), tier4eRow(), tier4fRow(),
                                   BLRow(), tier1RowBase(), tier2aRowBase(), tier2bRowBase(), tier2cRowBase(), tier2dRowBase(),
-                                  tier4aRowBase(), tier4bRowBase(), tier4cRowBase(), tier4dRowBase(),
+                                  tier4aRowBase(), tier4bRowBase(), tier4cRowBase(), tier4dRowBase(), tier4eRowBase(), tier4fRowBase(),
                                   PostBLRow(), tier1RowPost(), tier2aRowPost(), tier2bRowPost(), tier2cRowPost(), tier2dRowPost(),
-                                  tier4aRowPost(), tier4bRowPost(), tier4cRowPost(), tier4dRowPost()))
+                                  tier4aRowPost(), tier4bRowPost(), tier4cRowPost(), tier4dRowPost(), tier4eRowPost(), tier4fRowPost()))
       
       #drop rows that do not have statistics (they do not appear in the dataset)  
       finalTierTable<- subset(finalTierTable, SamplesTested != "NA")
@@ -2157,11 +2434,11 @@ server <- function(input, output, session) {
     } else {
       
       altFinalTierTable <- try(rbind(tier2aRow(), tier2bRow(), tier2cRow(), tier2dRow(),
-                                     tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow(),
+                                     tier4aRow(), tier4bRow(), tier4cRow(), tier4dRow(), tier4eRow(), tier4fRow(),
                                      BLRow(), tier2aRowBase(), tier2bRowBase(), tier2cRowBase(), tier2dRowBase(),
-                                     tier4aRowBase(), tier4bRowBase(), tier4cRowBase(), tier4dRowBase(),
+                                     tier4aRowBase(), tier4bRowBase(), tier4cRowBase(), tier4dRowBase(), tier4eRowBase(), tier4fRowBase(),
                                      PostBLRow(), tier2aRowPost(), tier2bRowPost(), tier2cRowPost(), tier2dRowPost(),
-                                     tier4aRowPost(), tier4bRowPost(), tier4cRowPost(), tier4dRowPost()))
+                                     tier4aRowPost(), tier4bRowPost(), tier4cRowPost(), tier4dRowPost(), tier4eRowPost(), tier4fRowPost()))
       
       #drop rows that do not have statistics (they do not appear in the dataset)
       altFinalTierTable <- subset(altFinalTierTable, SamplesTested != "NA")
@@ -2184,7 +2461,7 @@ server <- function(input, output, session) {
     numEvalSubjects <- nrow(titerPivot())
     
     # percent of subjects evaluable for TE ADA
-    baseRate <- round((numEvalSubjects/numEvalSubjects * 100), 2)
+    baseRate <- round((numEvalSubjects/nrow(pivotTableFunc()) * 100), 2)
     
     
     
@@ -2243,8 +2520,8 @@ server <- function(input, output, session) {
                           paste(teRate, "%", sep = ""), 
                           paste(tiRate, "%", sep = ""), 
                           paste(tbRate, "%", sep = "")),
-               row.names = c("Subjects Evaluable for TE ADA", "Evaluable Subs with ADA Present at Baseline",
-                             "Subjects TE ADA", "Treatment-Induced", "Treatment-Boosted"))
+               row.names = c("Evaluable Subjects for Treatment Emergence", "Evaluable Subjects w/ Baseline Positive Result",
+                             "Treatment Emergent Subjects", "Treatment-Induced", "Treatment-Boosted"))
     
     
     
@@ -2488,7 +2765,7 @@ server <- function(input, output, session) {
   output$plot2 <- renderPlot({
     
     #takes in user input MRD value
-    scaleInt <- input$scaleIn 
+    scaleInt <- input$scaleIn
     
     #subset graphical data by one subject
     currentSubject <- subset(lineGraphCols(), Subject == input$subs)
@@ -2532,11 +2809,11 @@ server <- function(input, output, session) {
     
     #draw first line
     plot2 <- plot2 + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
-                     geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
+      geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
     
     #draw second line
     plot2 <- plot2 + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
-                     geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
+      geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
     
     #styling, set secondary y-axis scale, adjust names of x-axis and primary y-axis
     #primary variable choice will be solid line, secondary variable choice will be dashed line
