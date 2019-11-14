@@ -1,7 +1,6 @@
 library(dplyr)
 library(DT)
 library(ggplot2)
-library(plotly)
 library(readxl)
 library(reshape2)
 library(shiny)
@@ -534,7 +533,7 @@ server <- function(input, output, session) {
   observe({
     toggle("t4fD", condition = input$checkT4F, anim = TRUE, time = 0.5, animType = "slide")
     toggle("t4fND", condition = input$checkT4F, anim = TRUE, time = 0.5, animType = "slide")
-
+    
   })
   
   
@@ -2809,11 +2808,11 @@ server <- function(input, output, session) {
     
     #draw first line
     plot2 <- plot2 + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
-                     geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
+      geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
     
     #draw second line
     plot2 <- plot2 + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
-                     geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
+      geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
     
     #styling, set secondary y-axis scale, adjust names of x-axis and primary y-axis
     #primary variable choice will be solid line, secondary variable choice will be dashed line
@@ -2847,5 +2846,4 @@ server <- function(input, output, session) {
 #end Shiny server function
 
 shinyApp(ui,server)
-
 

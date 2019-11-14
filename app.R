@@ -1,7 +1,6 @@
 library(dplyr)
 library(DT)
 library(ggplot2)
-library(plotly)
 library(readxl)
 library(reshape2)
 library(shiny)
@@ -2847,5 +2846,4 @@ server <- function(input, output, session) {
 #end Shiny server function
 
 shinyApp(ui,server)
-
 
