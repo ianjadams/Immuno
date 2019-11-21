@@ -185,6 +185,9 @@ server <- function(input, output, session) {
     initialData$Subject[is.na(initialData$Subject)] <- "Unknown Subject"
     initialData$Visit[is.na(initialData$Visit)] <- "Unknown Visit"
     initialData$Visit[initialData$Visit==input$baselineVisits] <- "Baseline"
+    initialData$Tier3 <- ifelse(substring(initialData$Tier3, 1, 2) == "1:",
+                            as.numeric(as.character(substring(initialData$Tier3, 3))),
+                            as.numeric(as.character(initialData$Tier3)))
     as.data.frame(initialData)
     
   })
@@ -197,9 +200,6 @@ server <- function(input, output, session) {
     
     rawData <- originalData()
     
-    rawData$Tier3 <- ifelse(substring(rawData$Tier3, 1, 2) == "1:",
-                            as.numeric(as.character(substring(rawData$Tier3, 3))),
-                            as.numeric(as.character(rawData$Tier3)))
     rawData$Tier3[is.na(rawData$Tier3)] <- 0
     as.data.frame(rawData)
     
@@ -924,7 +924,7 @@ server <- function(input, output, session) {
   #begin "Plot" tab
   output$plot <- renderPlot({
     
-    #use titer pivot table to create frequency table of each unique titer AND drop titer value of zero or "-Inf" (AKA no maxTiter)
+    #use subject pivot table to create frequency table of each unique titer AND drop titer value of zero or "-Inf" (AKA no maxTiter)
     countTiter <- as.data.frame(table(pivotTableFunc()$maxTiter))
     names(countTiter) <- c("Titer", "Count")
     countTiter <- countTiter[!(countTiter$Titer == 0 | countTiter$Titer == "-Inf"), ]
@@ -958,11 +958,12 @@ server <- function(input, output, session) {
     
     plotCount <- filter(pivotTableFunc(), maxTiter != 0, maxTiter != "-Inf")
     
-    paste("n = ", nrow(plotCount), "    *may include subjects who had titers after missing baseline", sep="")
+    paste("n = ", nrow(plotCount), "    *may include subjects who 1) had titers after missing baseline and/or 2) are not treatment emergent", sep="")
     
   })
   #end "sample size" output field
   #end "Plot" tab
+  
   
   
   
@@ -2727,7 +2728,7 @@ server <- function(input, output, session) {
   
   #gets the unique Subject list once the original dataset has been loaded
   observeEvent(originalData(), {
-    updateSelectInput(session, "subs", choices = distinct(myData(), Subject))
+    updateSelectInput(session, "subs", choices = distinct(originalData(), Subject))
   })
   
   
@@ -2735,7 +2736,7 @@ server <- function(input, output, session) {
   #gets the unique variables once the original dataset has been loaded
   #Subject and Visit are prepopulated in the select list
   observeEvent(originalData(), {
-    updateSelectInput(session, "vars", choices = names(myData()), selected = c("Subject", "Visit"))
+    updateSelectInput(session, "vars", choices = names(originalData()), selected = c("Subject", "Visit"))
   })
   
   
@@ -2754,7 +2755,7 @@ server <- function(input, output, session) {
   lineGraphCols <- function() {
     
     #arranges the table based on order user selects variables
-    newLinesData <- myData() %>% dplyr::select(!!!input$vars)
+    newLinesData <- originalData() %>% dplyr::select(!!!input$vars)
     return(newLinesData)
     
   }
