@@ -11,7 +11,6 @@ library(xlsx)
 
 
 
-
 #begin Shiny UI interface
 ui <- shinyUI(fluidPage(
   theme = shinytheme("flatly"),
@@ -26,6 +25,11 @@ ui <- shinyUI(fluidPage(
       
       .btn:hover {
         background-color: #30857c;
+      }
+      
+      code {
+        background: #cae0e5;
+        color: #2c3e50;
       }
       
       .progress-bar {
@@ -142,7 +146,7 @@ ui <- shinyUI(fluidPage(
                   tabPanel("Flags", DT::dataTableOutput('flag'),
                            br(),
                            tableOutput('premises')),
-                  tabPanel("Plot", plotOutput('plot'),
+                  tabPanel("Plot", plotOutput('plot1'),
                            verbatimTextOutput('sampleSize'),
                            br(),
                            varSelectInput("subs", "Select Subject:", character(0)),
@@ -180,27 +184,27 @@ server <- function(input, output, session) {
     
     #automatically enter text values for rows with missing Subject or missing Visit
     #update data to change user input BL value to "Baseline"
+    #trim off string "1:" if found in Tier3 column
     inFile <- input$file1
     if (is.null(inFile)) return(NULL)
     initialData <- data.frame(read_excel(inFile$datapath))
     initialData$Subject[is.na(initialData$Subject)] <- "Unknown Subject"
     initialData$Visit[is.na(initialData$Visit)] <- "Unknown Visit"
     initialData$Visit[initialData$Visit==input$baselineVisits] <- "Baseline"
+    initialData$Tier3 <- ifelse(substring(initialData$Tier3, 1, 2) == "1:",
+                                as.numeric(as.character(substring(initialData$Tier3, 3))),
+                                as.numeric(as.character(initialData$Tier3)))
     as.data.frame(initialData)
     
   })
   
   
   
-  #change Tier3 datatype to numeric and trim off "1:" from all values
   #insert 0 into all empty (NA) fields in Tier3
   myData <- function() {
     
     rawData <- originalData()
     
-    rawData$Tier3 <- ifelse(substring(rawData$Tier3, 1, 2) == "1:",
-                            as.numeric(as.character(substring(rawData$Tier3, 3))),
-                            as.numeric(as.character(rawData$Tier3)))
     rawData$Tier3[is.na(rawData$Tier3)] <- 0
     as.data.frame(rawData)
     
@@ -234,8 +238,10 @@ server <- function(input, output, session) {
     
     bp <- filter(myData(), Visit == "Baseline" & Tier2 == input$t2aD)
     
+    #handle empty table for no baseline positives
     if (dim(bp)[1] == 0) {
       
+      #print string to first row of table
       bp <- data.frame("EMPTY")
       names(bp) <- "Subject"
       return(bp)
@@ -263,12 +269,13 @@ server <- function(input, output, session) {
     #transform the rawData table to a pivot table, using Subjects as rows, Visits as columns, Tier3 values as cells
     rawDataTrans <- dcast(summRawData, Subject ~ Visit, value.var = "maxTiter")
     
-    #gets each unique visit code and closely reorganizes them in chronological order 
+    #gets each unique visit code and closely reorganizes them to chronological order 
     nams <- as.character(unique(myData()$Visit)) 
     nums <- sapply(nams, function(nm) which(names(rawDataTrans) %in% nm)) 
     rawDataTrans[, sort(nums)] <- rawDataTrans[, nams]
     names(rawDataTrans)[sort(nums)] <- nams
     
+    #bind highest titer to first column of pivot table
     subsetRawDataTrans <- try(if("Baseline" %in% colnames(rawDataTrans)) {
       
       newTable <- subset(rawDataTrans, select = -c(Subject, Baseline))
@@ -283,7 +290,7 @@ server <- function(input, output, session) {
   
   
   
-  #function: creates treatment emergent table
+  #function: creates treatment emergent pivot table
   treatEmerFunc <- function() {
     
     treatData <- pivotTableFunc()
@@ -300,8 +307,10 @@ server <- function(input, output, session) {
     #combined table of treatment induced/boosted subjects
     emerTable <- rbind(negBaseTE, posBaseTE)
     
+    #handle empty table for no treatment emergent subjects
     if (dim(emerTable)[1] == 0) {
       
+      #print string to first row of table
       emerTable <- data.frame("EMPTY")
       names(emerTable) <- "Subject"
       return(emerTable)
@@ -338,6 +347,7 @@ server <- function(input, output, session) {
     
     #if user does not reorganize any columns, return the original pivot table
     if (length(input$col) == 0) return(pivotTableFunc())
+    
     #arranges the table based on order user selects visit codes
     newPivTable <- pivotTableFunc() %>% dplyr::select(!!!input$col)
     return(newPivTable)
@@ -351,6 +361,7 @@ server <- function(input, output, session) {
     
     #if user does not reorganize any columns, return the original pivot table
     if (length(input$col) == 0) return(treatEmerFunc())
+    
     #arranges the table based on order user selects visit codes
     newTreatTable <- treatEmerFunc() %>% dplyr::select(!!!input$col)
     return(newTreatTable)
@@ -549,6 +560,7 @@ server <- function(input, output, session) {
     
     
     #begin logical QC checks
+    
     #tier1
     QC1 <- try(if("Tier1" %in% colnames(allFlags)) {
       subset(allFlags, Tier1 != input$t1D & Tier1 != input$t1ND & Tier1 != "N/A" & Tier1 != "NA")
@@ -596,96 +608,6 @@ server <- function(input, output, session) {
     #duplicate visits
     QC12 <- allFlags[duplicated(allFlags[, c("Subject", "Visit")]), ]
     
-    #multiple tier 2 columns
-    QC13 <- try(if("Tier2b" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2b != input$t2bD & Tier2b != input$t2bND & Tier2b != "N/A" & Tier2b != "NA")
-      
-    })
-    
-    QC14 <- try(if("Tier2b" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2 == input$t2aD & is.na(Tier2b))
-      
-    })
-    
-    QC15 <- try(if("Tier2c" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2c != input$t2cD & Tier2c != input$t2cND & Tier2c != "N/A" & Tier2c != "NA")
-      
-    })
-    
-    QC16 <- try(if("Tier2c" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2 == input$t2aD & is.na(Tier2c))
-      
-    })
-    
-    QC17 <- try(if("Tier4b" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2 == input$t2aD & is.na(Tier4b))
-      
-    })
-    
-    QC18 <- try(if("Tier2b" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2 == input$t2aND & Tier2b == input$t2bD)
-      
-    })
-    
-    QC19 <- try(if("Tier2c" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2 == input$t2aND & Tier2c == input$t2cD)
-      
-    })
-    
-    QC20 <- try(if("Tier4b" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2 == input$t2aND & Tier4b == input$t4bD)
-      
-    })
-    
-    QC21 <- try(if("Tier4b" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier4b != input$t4bD & Tier4b != input$t4bND & Tier4b != "N/A" & Tier4b != "NA")
-      
-    })
-    
-    QC22 <- try(if("Tier4c" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier4c != input$t4cD & Tier4c != input$t4cND & Tier4c!= "N/A" & Tier4c != "NA")
-      
-    })
-    
-    QC23 <- try(if("Tier4c" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2b == input$t2bD & is.na(Tier4c))
-      
-    })
-    
-    QC24 <- try(if("Tier4c" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2b == input$t2bND & Tier4c == input$t4cD)
-      
-    })
-    
-    QC25 <- try(if("Tier4d" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier4d != input$t4dD & Tier4d != input$t4dND & Tier4d != "N/A" & Tier4d != "NA")
-      
-    })
-    
-    QC26 <- try(if("Tier4d" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2c == input$t2cD & is.na(Tier4d))
-      
-    })
-    
-    QC27 <- try(if("Tier4d" %in% colnames(allFlags)) {
-      
-      subset(allFlags, Tier2c == input$t2cND & Tier4d == input$t4dD)
-      
-    })
     #end logical QC checks
     
     
@@ -739,71 +661,10 @@ server <- function(input, output, session) {
       QC12$Premise <- "Duplicate Visit for Subject"
     }, silent = TRUE)
     
-    try(if(QC13$Premise == "exp") {
-      QC13$Premise <- "T2b Discrepant Value"
-    }, silent = TRUE)
-    
-    try(if(QC14$Premise == "exp") {
-      QC14$Premise <- "T2(+) w/o Result in T2b"
-    }, silent = TRUE)
-    
-    try(if(QC15$Premise == "exp") {
-      QC15$Premise <- "T2c Discrepant Value"
-    }, silent = TRUE)
-    
-    try(if(QC16$Premise == "exp") {
-      QC16$Premise <- "T2(+) w/o Result in T2c"
-    }, silent = TRUE)
-    
-    try(if(QC17$Premise == "exp") {
-      QC17$Premise <- "T2(+) w/o Result in T4b"
-    }, silent = TRUE)
-    
-    try(if(QC18$Premise == "exp") {
-      QC18$Premise <- "T2(-) with T2b(+)"
-    }, silent = TRUE)
-    
-    try(if(QC19$Premise == "exp") {
-      QC19$Premise <- "T2(-) with T2c(+)"
-    }, silent = TRUE)
-    
-    try(if(QC20$Premise == "exp") {
-      QC20$Premise <- "T2(-) with T4b(+)"
-    }, silent = TRUE)
-    
-    try(if(QC21$Premise == "exp") {
-      QC21$Premise <- "T4b Discrepant Value"
-    }, silent = TRUE)
-    
-    try(if(QC22$Premise == "exp") {
-      QC22$Premise <- "T4c Discrepant Value"
-    }, silent = TRUE)
-    
-    try(if(QC23$Premise == "exp") {
-      QC23$Premise <- "T2b(+) w/o Result in T4c"
-    }, silent = TRUE)
-    
-    try(if(QC24$Premise == "exp") {
-      QC24$Premise <- "T2b(-) with T4c(+)"
-    }, silent = TRUE)
-    
-    try(if(QC25$Premise == "exp") {
-      QC25$Premise <- "T4d Discrepant Value"
-    }, silent = TRUE)
-    
-    try(if(QC26$Premise == "exp") {
-      QC26$Premise <- "T2c(+) w/o Result in T4d"
-    }, silent = TRUE)
-    
-    try(if(QC27$Premise == "exp") {
-      QC27$Premise <- "T2c(-) with T4d(+)"
-    }, silent = TRUE)
-    
     
     
     #combine all rows that have any of the errors above
-    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9, QC10, QC11, QC12, QC13, QC14,
-                            QC15, QC16, QC17, QC18, QC19, QC20, QC21, QC22, QC23, QC24, QC25, QC26, QC27))
+    errorTable <- try(rbind(QC1, QC2, QC3, QC4, QC5, QC6, QC7, QC8, QC9, QC10, QC11, QC12))
     return(errorTable)
     
   }
@@ -923,9 +784,12 @@ server <- function(input, output, session) {
   
   
   #begin "Plot" tab
-  output$plot <- renderPlot({
+  
+  
+  #begin histogram
+  output$plot1 <- renderPlot({
     
-    #use titer pivot table to create frequency table of each unique titer AND drop titer value of zero or "-Inf" (AKA no maxTiter)
+    #use subject pivot table to create frequency table of each unique titer AND drop titer value of zero or "-Inf" (AKA no maxTiter)
     countTiter <- as.data.frame(table(pivotTableFunc()$maxTiter))
     names(countTiter) <- c("Titer", "Count")
     countTiter <- countTiter[!(countTiter$Titer == 0 | countTiter$Titer == "-Inf"), ]
@@ -951,6 +815,7 @@ server <- function(input, output, session) {
     )
     
   })
+  #end histogram
   
   
   
@@ -959,11 +824,133 @@ server <- function(input, output, session) {
     
     plotCount <- filter(pivotTableFunc(), maxTiter != 0, maxTiter != "-Inf")
     
-    paste("n = ", nrow(plotCount), "    *may include subjects who had titers after missing baseline", sep="")
+    paste("n = ", nrow(plotCount), "    *may include subjects who 1) had titers after missing baseline and/or 2) are not treatment emergent", sep="")
     
   })
   #end "sample size" output field
+  
+  
+  
+  #gets the unique Subject list once the original dataset has been loaded
+  observeEvent(originalData(), {
+    updateSelectInput(session, "subs", choices = distinct(originalData(), Subject))
+  })
+  
+  
+  
+  #gets the unique variables once the original dataset has been loaded
+  #Subject and Visit are prepopulated in the select list
+  observeEvent(originalData(), {
+    updateSelectInput(session, "vars", choices = names(originalData()), selected = c("Subject", "Visit"))
+  })
+  
+  
+  
+  #begin "scale" input field
+  output$scaleOut <- renderText({
+    
+    paste("Scale set at 1:", input$scaleIn, " transformation", sep="")
+    
+  })
+  #end "scale" input field
+  
+  
+  
+  #create table with Subject, Visit, and additional columns selected by the user
+  lineGraphCols <- function() {
+    
+    #arranges the table based on order user selects variables
+    newLinesData <- originalData() %>% dplyr::select(!!!input$vars)
+    return(newLinesData)
+    
+  }
+  
+  
+  
+  #begin line graph
+  output$plot2 <- renderPlot({
+    
+    #takes in user input scale value
+    scaleInt <- input$scaleIn
+    
+    #subset graphical data by one subject
+    currentSubject <- subset(lineGraphCols(), Subject == input$subs)
+    
+    #drop columns "Subject" and "Visit" from the currentSubject table
+    excludedCols <- select(currentSubject, Subject, Visit)
+    excludedNames <- c("Subject", "Visit")
+    
+    #make currentSubject table numeric (excluding Subject and Visit)
+    currentSubject <- currentSubject %>% select(-one_of(excludedNames))
+    currentSubject[, ] <- lapply(currentSubject[, ], as.numeric)
+    
+    #recombine columns "Subject" and "Visit" to the numeric table for this subject
+    currentSubject <- cbind(excludedCols, currentSubject)
+    
+    #change first and second variable selections from input$vars to "Primary" and "Secondary" for graphing purposes
+    colnames(currentSubject)[3] <- "Primary"
+    colnames(currentSubject)[4] <- "Secondary"
+    primLine <- as.factor(input$vars[3])
+    secLine <- as.factor(input$vars[4])
+    
+    #function to retrieve the order of visits set in pivTableView()
+    visitReorder <- function() {
+      
+      targetOrder <- colnames(pivTableView())
+      return(targetOrder)
+      
+    }
+    
+    #rearrange subject visits according to the vector order of columns set in pivTableView()
+    currentSubject$Visit <- factor(currentSubject$Visit, levels = visitReorder())
+    dfSubject <- currentSubject[order(currentSubject$Visit),]
+    print(dfSubject)
+    
+    
+    
+    #begin plot for dual y-axis time series data
+    
+    #set x-axis
+    plot2 <- ggplot(dfSubject, aes(x = Visit, group = 1))
+    
+    #draw first line
+    plot2 <- plot2 + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
+      geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
+    
+    #draw second line
+    plot2 <- plot2 + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
+      geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
+    
+    #styling, set secondary y-axis scale, adjust names of x-axis and primary y-axis
+    #primary variable choice will be solid line, secondary variable choice will be dashed line
+    #blue line is the variable that comes first in the alphabet, green with variable name that comes second to the first variable
+    colorVec <- c("#337ab7", "#18bc9c")
+    plot2 <- plot2 + scale_colour_manual(values = colorVec)
+    plot2 <- plot2 + scale_y_continuous(sec.axis = sec_axis(~.*scaleInt, name = secLine))
+    plot2 <- plot2 + labs(x = "Visit", y = primLine, colour = "")
+    plot2Title <- paste0("Time Series Trend: ", primLine, " vs. ", secLine, sep = "")
+    plot2 <- plot2 + ggtitle(plot2Title)
+    
+    plot2 + theme(
+      plot.title = element_text(color = "#2c3e50", size = 24, face = "bold"),
+      legend.text = element_text(size = 14),
+      axis.ticks.length = unit(10, "pt"),
+      axis.title.x = element_text(color = "#2c3e50", size = 20, face = "bold"),
+      axis.title.y = element_text(color = "#2c3e50", size = 20, face = "bold"),
+      axis.text.x = element_text(size = 14, angle = 45, hjust = 1),
+      axis.text.y = element_text(size = 14),
+      axis.line = element_line(color = "#337ab7", size = 1, linetype = "solid"),
+      panel.background = element_rect(fill = "#cccccc", color = "#cccccc")
+    )
+    
+    
+    
+  })
+  #end line graph
+  
+  
   #end "Plot" tab
+  
   
   
   
@@ -2620,7 +2607,7 @@ server <- function(input, output, session) {
       '<p><code>Subject | Visit | Tier2 | Tier3</code></p>',
       '<br />',
       '<p>Datasets with additional tier columns are not required, but must also have precise phrasing.</p>',
-      '<p><code>Tier1 | Tier2b | Tier2c | Tier2d | Tier4 | Tier4b | Tier4c | Tier4d</code></p>',
+      '<p><code>Tier1 | Tier2b | Tier2c | Tier2d | Tier4 | Tier4b | Tier4c | Tier4d | Tier4e | Tier4f</code></p>',
       
       '</div>',
       
@@ -2694,14 +2681,15 @@ server <- function(input, output, session) {
       '<li><b>SamplesTested</b> is sum of user-entered Detected and Not Detected values in each Tier</li>',
       '<li><b>Detected</b> is sum of user-entered Detected values in each Tier</li>',
       '<li><b>PositiveRate</b> is # of <b>Detected</b> / # of <b>SamplesTested</b> in each Tier</li>',
-      '<li><b>Evaluable Subjects</b> are those that have a Baseline visit and at least 1 follow-up visit</li>',
+      '<li><b>Evaluable Subjects for Treatment Emergence</b> are those that have a Baseline visit and at least 1 follow-up visit</li>',
+      '<li><b>Total Unique Subjects</b> is sum of <b>Evaluable</b> and <b>Unevaluated</b> subjects in the study</li>',
       '<li><b>Unevaluated Subjects</b> are those that either:</li>',
       '<ul>',
       '<li>missed Baseline</li>',
       '<li>have Baseline visit without any follow-up visits</li>',
       '</ul>',
-      '<li><b>Total Unique Subjects</b> is sum of <b>Evaluable</b> and <b>Unevaluated</b> subjects in the study</li>',
-      '<li><b>Highest Titer</b> is the maximum Post-Baseline titer in the study</li>',
+      '<li><b>Highest Baseline Titer</b> is the maximum titer value from Baseline visits</li>',
+      '<li><b>Highest Post-Baseline Titer</b> is the maximum titer value from all other visits, excluding Baseline</li>',
       
       '</ol>',
       
@@ -2717,134 +2705,9 @@ server <- function(input, output, session) {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  #begin "Plot" tab
-  
-  #gets the unique Subject list once the original dataset has been loaded
-  observeEvent(originalData(), {
-    updateSelectInput(session, "subs", choices = distinct(myData(), Subject))
-  })
-  
-  
-  
-  #gets the unique variables once the original dataset has been loaded
-  #Subject and Visit are prepopulated in the select list
-  observeEvent(originalData(), {
-    updateSelectInput(session, "vars", choices = names(myData()), selected = c("Subject", "Visit"))
-  })
-  
-  
-  
-  #begin "scale" input field
-  output$scaleOut <- renderText({
-    
-    paste("Scale set at 1:", input$scaleIn, " transformation", sep="")
-    
-  })
-  #end "scale" input field
-  
-  
-  
-  #create table withSubject, Visit, and additional columns selected by the user
-  lineGraphCols <- function() {
-    
-    #arranges the table based on order user selects variables
-    newLinesData <- myData() %>% dplyr::select(!!!input$vars)
-    return(newLinesData)
-    
-  }
-  
-  
-  
-  output$plot2 <- renderPlot({
-    
-    #takes in user input MRD value
-    scaleInt <- input$scaleIn
-    
-    #subset graphical data by one subject
-    currentSubject <- subset(lineGraphCols(), Subject == input$subs)
-    
-    #drop columns "Subject" and "Visit" from the currentSubject table
-    excludedCols <- select(currentSubject, Subject, Visit)
-    excludedNames <- c("Subject", "Visit")
-    
-    #make currentSubject table numeric (excluding Subject and Visit)
-    currentSubject <- currentSubject %>% select(-one_of(excludedNames))
-    currentSubject[, ] <- lapply(currentSubject[, ], as.numeric)
-    
-    #recombine columns "Subject" and "Visit" to the numeric table for this subject
-    currentSubject <- cbind(excludedCols, currentSubject)
-    
-    #change first and second variable selections from input$vars to "Primary" and "Secondary" for graphing purposes
-    colnames(currentSubject)[3] <- "Primary"
-    colnames(currentSubject)[4] <- "Secondary"
-    primLine <- as.factor(input$vars[3])
-    secLine <- as.factor(input$vars[4])
-    
-    #function to retrieve the order of visits set in pivTableView()
-    visitReorder <- function() {
-      
-      targetOrder <- colnames(pivTableView())
-      return(targetOrder)
-      
-    }
-    
-    #rearrange subject visits according to the vector order of columns set in pivTableView()
-    currentSubject$Visit <- factor(currentSubject$Visit, levels = visitReorder())
-    dfSubject <- currentSubject[order(currentSubject$Visit),]
-    print(dfSubject)
-    
-    
-    
-    #begin plot for dual y-axis time series data
-    
-    #set x-axis
-    plot2 <- ggplot(dfSubject, aes(x = Visit, group = 1))
-    
-    #draw first line
-    plot2 <- plot2 + geom_line(aes(y = Primary, colour = primLine), size = 1.2) +
-      geom_point(aes(y = Primary, colour = primLine), size = 3.5, na.rm = TRUE)
-    
-    #draw second line
-    plot2 <- plot2 + geom_line(aes(y = Secondary/scaleInt, colour = secLine), linetype = "dashed", size = 1.2) +
-      geom_point(aes(y = Secondary/scaleInt, colour = secLine), size = 3.5, na.rm = TRUE)
-    
-    #styling, set secondary y-axis scale, adjust names of x-axis and primary y-axis
-    #primary variable choice will be solid line, secondary variable choice will be dashed line
-    #blue line is the variable that comes first in the alphabet, green with variable name that comes second to the first variable
-    colorVec <- c("#337ab7", "#18bc9c")
-    plot2 <- plot2 + scale_colour_manual(values = colorVec)
-    plot2 <- plot2 + scale_y_continuous(sec.axis = sec_axis(~.*scaleInt, name = secLine))
-    plot2 <- plot2 + labs(x = "Visit", y = primLine, colour = "")
-    plot2Title <- paste0("Time Series Trend: ", primLine, " vs. ", secLine, sep = "")
-    plot2 <- plot2 + ggtitle(plot2Title)
-    
-    plot2 + theme(
-      plot.title = element_text(color = "#2c3e50", size = 24, face = "bold"),
-      legend.text = element_text(size = 14),
-      axis.ticks.length = unit(10, "pt"),
-      axis.title.x = element_text(color = "#2c3e50", size = 20, face = "bold"),
-      axis.title.y = element_text(color = "#2c3e50", size = 20, face = "bold"),
-      axis.text.x = element_text(size = 14, angle = 45, hjust = 1),
-      axis.text.y = element_text(size = 14),
-      axis.line = element_line(color = "#337ab7", size = 1, linetype = "solid"),
-      panel.background = element_rect(fill = "#cccccc", color = "#cccccc")
-    )
-    
-    
-    
-  })
-  
-  
-  
 }
 #end Shiny server function
 
 shinyApp(ui,server)
+
 
