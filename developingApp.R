@@ -1,3 +1,13 @@
+#################################################################################
+# FILENAME   : developingApp.R
+# AUTHOR     : Ian Adams <adams_ian_joseph@network.lilly.com>
+# DATE       : 2019-11-26
+# PROJECT    : LRL_Immuno_Analysis_Now
+# DESCRIPTION: Copy of app.R
+#################################################################################
+
+
+
 library(dplyr)
 library(DT)
 library(ggplot2)
