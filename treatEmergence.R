@@ -15,19 +15,20 @@ library(shiny)
 
 
 #read in data
-rawData <- read_excel("AMAC_PBI_trimmed.xlsx")
+rawData <- read_excel("TE_dummy.xlsx")
 
 #set NA values to 0
 rawData$Tier3[is.na(rawData$Tier3)] <- 0
 
 #trim " 1: " from the values in Tier 3 column, set the column as numeric values
-rawData$Tier3 <- ifelse(substring(rawData$Tier3, 1, 2) == "1:", 
-                        as.numeric(as.character(substring(rawData$Tier3, 3))), rawData$Tier3)
+rawData$Tier3 <- ifelse(substring(rawData$Tier3, 1, 2) == "1:",
+                            as.numeric(as.character(substring(rawData$Tier3, 3))),
+                            as.numeric(as.character(rawData$Tier3)))
 
 
 
 
-rawData[rawData=="BL/V2"] <- "Baseline"
+rawData[rawData=="V2"] <- "Baseline"
 
 
 
