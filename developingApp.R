@@ -2562,14 +2562,14 @@ server <- function(input, output, session) {
       
       these = input$contents_rows_all
       
-      write.xlsx(myData(), file, sheetName="Original", row.names=FALSE, showNA = FALSE)
-      write.xlsx(baselineFunc(), file, sheetName="Baselines", append=TRUE, row.names=FALSE, showNA = FALSE)
-      write.xlsx(bpFunc(), file, sheetName="Baseline Positives", append=TRUE, row.names=FALSE, showNA = FALSE)
-      write.xlsx(unEvalFunc(), file, sheetName="Unevaluated Subjects", append=TRUE, row.names=FALSE, showNA = FALSE)
-      write.xlsx(pivTableView(), file, sheetName="Subject Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
-      write.xlsx(pivTreatView(), file, sheetName="Treatment Emergent Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
-      write.xlsx(pivTiterView(), file, sheetName="Titer Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE)
-      write.xlsx(myData()[these, , drop = FALSE], file, sheetName="Search Results", append=TRUE, row.names=FALSE, showNA = FALSE)
+      try(write.xlsx(myData(), file, sheetName="Original", row.names=FALSE, showNA = FALSE))
+      try(write.xlsx(baselineFunc(), file, sheetName="Baselines", append=TRUE, row.names=FALSE, showNA = FALSE))
+      try(write.xlsx(bpFunc(), file, sheetName="Baseline Positives", append=TRUE, row.names=FALSE, showNA = FALSE))
+      try(write.xlsx(unEvalFunc(), file, sheetName="Unevaluated Subjects", append=TRUE, row.names=FALSE, showNA = FALSE))
+      try(write.xlsx(pivTableView(), file, sheetName="Subject Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE))
+      try(write.xlsx(pivTreatView(), file, sheetName="Treatment Emergent Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE))
+      try(write.xlsx(pivTiterView(), file, sheetName="Titer Pivot Table", append=TRUE, row.names=FALSE, showNA = FALSE))
+      try(write.xlsx(myData()[these, , drop = FALSE], file, sheetName="Search Results", append=TRUE, row.names=FALSE, showNA = FALSE))
       
     })
   #end "Download All Tables" button
